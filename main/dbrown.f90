@@ -19,7 +19,7 @@ PROGRAM PRINCIPAL
     real(real64), dimension(mt) :: t, wt, ft
     real(real64), dimension(mt, np) :: cfx, cfy, cfz
 
-    real(real64), parameter :: dr = rc/mr, dq = pi/rc !ancho de un punto antro dentrodelradio de corte
+    real(real64), parameter :: dr = rc/mr, dq = pi/rc
     real(real64), parameter :: d = (1.0d0/rho)**(1.d0/3.d0)
     integer(int32), parameter :: k = 3
 
@@ -27,8 +27,8 @@ PROGRAM PRINCIPAL
     real(real64), dimension(np*k) :: Rz
 
     integer(int32) :: i, istep, nprom, j, ncep, nconf, ncp
-    real(real64) :: ener, enerpot, epotn, dv, fnorm, &
-                        graux, hraux, pbc = 1.0d0
+    real(real64) :: ener, enerpot, epotn, dv, fnorm
+    real(real64) :: graux, hraux, pbc = 1.0d0
 
     integer(int32), parameter :: limT = 50000
 
@@ -74,10 +74,10 @@ PROGRAM PRINCIPAL
         call check_nan(fz, np)
         call IH( x, y, z, np, dij, Rz )
         epotn = enerpot/dfloat(np)
-        if (mod(istep, 10000) .eq. 0) then
+        if (mod(istep, 10000) == 0) then
             print*, istep, epotn, 'Thermal'
         end if
-        if (mod(istep, 1000) .eq. 0) then 
+        if (mod(istep, 1000) == 0) then 
             write(51,'(3f16.8)') dfloat(istep), epotn
         end if
     enddo
@@ -118,10 +118,10 @@ PROGRAM PRINCIPAL
         call check_nan(fy, np)
         call check_nan(fz, np)
         call IH( x, y, z, np, dij, Rz )
-        if ( mod(i,10000) .eq. 0 ) then
+        if ( mod(i,10000) == 0 ) then
             print*, i, enerpot/np, 'Average'
         end if
-        if ( mod(i, ncep) .eq. 0 ) then
+        if ( mod(i, ncep) == 0 ) then
             nprom = nprom + 1
             ! t(nprom) = deltat*ncep*(nprom-1)
             ! do j = 1, np
@@ -170,20 +170,20 @@ subroutine iniconfig(xc, yc, zc, d)
     real(real64), intent(out), dimension(np) :: xc, yc, zc
     real(real64), intent(in) :: d
     ! Local variables
-    integer(int32) :: i ! it is neccesary for restart i
+    integer(int32) :: i
 
     xc(1) = -(boxl-d)/2.0d0
     yc(1) = -(boxl-d)/2.0d0
     zc(1) = -(boxl-d)/2.0d0
 
-    do i = 2,np ! note that 'i' was defined as integer in argumt
+    do i = 2,np
         xc(i) = xc(i-1) + d
         yc(i) = yc(i-1)
         zc(i) = zc(i-1)
-        if (xc(i) .gt. rc) then  ! .gt. it is >
+        if (xc(i) > rc) then
             xc(i) = xc(1)
             yc(i) = yc(i-1) + d
-            if (yc(i) .gt. rc) then
+            if (yc(i) > rc) then
                 xc(i) = xc(1)
                 yc(i) = yc(1)
                 zc(i) = zc(i-1) + d
@@ -232,8 +232,8 @@ subroutine  force(x, y, z, fx, fy, fz, ener)
             yij = yij-boxl*anint(yij/boxl)
             zij = zij-boxl*anint(zij/boxl)
             rij2 = xij*xij+yij*yij+zij*zij
-            rij = sqrt(rij2)  !sqrt -> square root
-            if (rij .lt. rc) then ! .lt. it is <
+            rij = sqrt(rij2)
+            if (rij < rc) then
                 call hardsphere(rij,uij,xij,yij,zij,fxij,fyij,fzij)
                 ener = ener+uij
                 fx(i) = fx(i)+fxij
@@ -262,7 +262,7 @@ subroutine hardsphere(rij, uij, xij, yij, zij, fxij, fyij, fzij)
 ! Local variables
     real(real64) ::  fij
 
-    if (rij .lt. (dlr/dla)**(1.d0/(dlr-dla))) then
+    if (rij < (dlr/dla)**(1.d0/(dlr-dla))) then
        uij = (a2/dT)*((1./rij)**dlr-(1./rij)**dla) + 1./dT
        fij = dlr*(1.d0/rij)**(dlr+1.d0)-dla*(1.d0/rij)**(dla+1.d0)
        fij = (a2/dT)*fij
@@ -349,9 +349,9 @@ subroutine gr(x,y,z,g,dr)
             zij = zij-boxl*anint(zij/boxl)
             rij2 = xij*xij+yij*yij+zij*zij
             rij = sqrt(rij2)
-            if (rij .lt. rc) then
+            if (rij < rc) then
                 nbin = nint(rij/dr)+1
-                if (nbin .le. mr) then
+                if (nbin <= mr) then
                     g(nbin) = g(nbin)+2.0d0
                 endif
             endif

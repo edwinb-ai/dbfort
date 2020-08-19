@@ -1,25 +1,13 @@
 module randomm
+use iso_fortran_env, only: real64
 
-    ! interface
-    !     double precision function gasdev()
-    !         implicit none
-    !         real :: v1, v2, fac, rsq
-    !         real, save :: gset
-
-    !         logical, save :: available = .false.
-    !     end function gasdev
-    ! end interface
 implicit none
 private
 public gasdev
 
 contains
 
-    double precision function gasdev()
-        use iso_fortran_env, only: real64
-
-        implicit none
-
+    real(real64) function gasdev()
         real(real64) :: v1, v2, fac, rsq
         real(real64), save :: gset
 

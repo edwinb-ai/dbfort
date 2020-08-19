@@ -1,5 +1,5 @@
 CC = gfortran
-FLAGS = -Wall -Wextra -Wimplicit-interface -fPIC -fmax-errors=1 -g -fcheck=all -fbacktrace
+FLAGS = -fPIC -O3 -march=native -ffast-math -funroll-loops
 LIBS = -llapack
 objects = positions.o tensor.o utils.o outerprod.o random.o parameters.o
 target = dbrown
