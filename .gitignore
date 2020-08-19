@@ -1,1 +1,5 @@
 .vscode/
+*.o
+*.mod
+*.dat
+dbrown
