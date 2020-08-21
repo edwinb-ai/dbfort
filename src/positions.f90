@@ -2,7 +2,7 @@ subroutine position_ih(x, y, z, fx, fy, fz, dij, Rz, pbc)
     use iso_fortran_env, only: real64, int32
 
 ! Global variables
-    use box_pot_parameters ! gives diam, rho, rc, np, mp, pi, boxl, dl, dT
+    use box_pot_parameters, only: np, sqtwodt, boxl, deltat
 
     implicit none
 
@@ -16,6 +16,7 @@ subroutine position_ih(x, y, z, fx, fy, fz, dij, Rz, pbc)
     integer(int32), parameter :: k = 3 ! Dimensión espacial del sistema
     real(real64), dimension(k, np) :: fuerzas
     real(real64), dimension(np*k) :: temp
+    real(real64), dimension(k) :: mulout
 
     fuerzas(1, :) = fx
     fuerzas(2, :) = fy
@@ -26,15 +27,17 @@ subroutine position_ih(x, y, z, fx, fy, fz, dij, Rz, pbc)
     do i = 1, k*np, k
         do j = 1, np-1
             ij = (k*j) - k + 1
-            temp(i:i+2) = temp(i:i+2) + matmul( dij(i:i+2,ij:ij+2), fuerzas(:, j) )
+            call dgemv( 'n',k,k,1.0d0,dij(i:i+2,ij:ij+2),k,fuerzas(:, j),1,0.d0,mulout,1 )
+            ! temp(i:i+2) = temp(i:i+2) + matmul( dij(i:i+2,ij:ij+2), fuerzas(:, j) )
+            temp(i:i+2) = temp(i:i+2) + mulout
         enddo
     enddo
 
     do i = 1, np
         ij = (k * i) - k + 1
-        x(i) = x(i) + temp(ij)*deltat + sqrt(2.0d0*deltat)*Rz(ij)
-        y(i) = y(i) + temp(ij+1)*deltat + sqrt(2.0d0*deltat)*Rz(ij+1)
-        z(i) = z(i) + temp(ij+2)*deltat + sqrt(2.0d0*deltat)*Rz(ij+2)
+        x(i) = x(i) + temp(ij)*deltat + sqtwodt*Rz(ij)
+        y(i) = y(i) + temp(ij+1)*deltat + sqtwodt*Rz(ij+1)
+        z(i) = z(i) + temp(ij+2)*deltat + sqtwodt*Rz(ij+2)
         if (pbc > 0.0d0) then
             x(i) = x(i) - boxl*anint(x(i)/boxl)
             y(i) = y(i) - boxl*anint(y(i)/boxl)
@@ -48,7 +51,7 @@ subroutine position(x, y, z, fx, fy, fz, pbc)
     use iso_fortran_env, only: real64, int32
 
 ! Global variables
-    use box_pot_parameters ! gives diam, rho, rc, np, mp, pi, boxl, dl, dT
+    use box_pot_parameters, only: np, sqtwodt, boxl, deltat
     use randomm, only: gasdev
     implicit none
 
@@ -57,14 +60,12 @@ subroutine position(x, y, z, fx, fy, fz, pbc)
     real(real64), intent(in):: pbc
     ! Local variables
     integer(int32) :: i
-    real(real64) :: sigma, dx, dy, dz
-    ! real(real64), external :: gasdev ! function
+    real(real64) :: dx, dy, dz
 
-    sigma = dsqrt(2.d0*deltat)
     do i = 1, np
-        dx = sigma*gasdev()
-        dy = sigma*gasdev()
-        dz = sigma*gasdev()
+        dx = sqtwodt*gasdev()
+        dy = sqtwodt*gasdev()
+        dz = sqtwodt*gasdev()
         x(i) = x(i) + fx(i)*deltat + dx
         y(i) = y(i) + fy(i)*deltat + dy
         z(i) = z(i) + fz(i)*deltat + dz

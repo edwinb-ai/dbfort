@@ -1,6 +1,6 @@
 CC = gfortran
 FLAGS = -fPIC -O3 -march=native -ffast-math -funroll-loops
-LIBS = -llapack
+LIBS = -llapack -lblas
 objects = positions.o tensor.o utils.o outerprod.o random.o parameters.o
 target = dbrown
 INCLUDE = include/

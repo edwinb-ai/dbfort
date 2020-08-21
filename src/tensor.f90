@@ -3,6 +3,7 @@ use iso_fortran_env, only: real64, int32
 use outerprod
 use utils, only: unit_matrix
 use randomm, only: gasdev
+
 implicit none
 private
 public ih
@@ -10,10 +11,6 @@ public ih
 contains
 
     subroutine IH( x, y, z, k, mat_a, R )
-        
-
-        implicit none
-
         !declaracion de variables
         integer, parameter :: n = 3 !la dimension de la matriz (x,y,z)
         integer, intent(in) :: k   ! numero de submatrices (particulas)
@@ -46,7 +43,7 @@ contains
         datos(2, :) = y
         datos(3, :) = z
 
-        call unit_matrix(ident)
+        call unit_matrix( ident )
         R = 0.0d0
         Xr = 0.0d0
         mat_a = 0.0d0
@@ -69,7 +66,7 @@ contains
                 part1 = datos(:, ix)
                 part2 = datos(:, ij)
 
-                call matrizDij(part1, part2, Dij, n)
+                call matrizDij( part1, part2, Dij, n )
 
                 mat_a(il:il+n-1,pos:pos+n-1) = Dij
                 mat_a(pos:pos+n-1,il:il+n-1) = Dij
@@ -81,18 +78,12 @@ contains
         ! Descomposición de Cholesky
         call dpotrf( 'L',n*k,sigma,n*k,info )
         ! Multiplicar L*Xr para obtener el vector de números aleatorios
-        R = matmul(sigma, Xr)
-
+        ! R = matmul( sigma, Xr )
+        call dgemv( 'n',n*k,n*k,1.0d0,sigma,n*k,Xr,1,0.0d0,R,1 )
     end subroutine IH
 
 
     subroutine matrizDij(part1, part2, Dij, n)
-        use iso_fortran_env, only: real64, int32
-        use outerprod
-        use utils, only: unit_matrix
-
-        implicit none
-
         ! Variables de entrada y salida
         integer(int32), intent(in) :: n
         real(real64), dimension(n), intent(in) :: part1 !
@@ -115,8 +106,8 @@ contains
         Dij = 0.0d0
         prodout = 0.0d0
 
-        sqrddist = sqrt(rij)
-        call unit_matrix(ident)
+        sqrddist = sqrt( rij )
+        call unit_matrix( ident )
 
         if (sqrddist .ge. 1.0d0) then
             prodout = outerprod_d( temp, temp ) / rij
@@ -130,5 +121,4 @@ contains
             Dij = Dij + 3.0d0*outerprod_d( temp, temp )/(16.0d0*sqrddist)
         end if
     end subroutine matrizDij
-
 end module tensor

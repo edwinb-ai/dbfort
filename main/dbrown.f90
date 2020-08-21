@@ -30,7 +30,7 @@ PROGRAM PRINCIPAL
     real(real64) :: ener, enerpot, epotn, dv, fnorm
     real(real64) :: graux, hraux, pbc = 1.0d0
 
-    integer(int32), parameter :: limT = 50000
+    integer(int32), parameter :: limT = 80000
 
     print*, 'The length of the box is: ', boxl
     print*, 'The mean interparticle distance is: ', d
@@ -66,12 +66,12 @@ PROGRAM PRINCIPAL
         ! call position( x, y, z, fx, fy, fz, pbc )
         call force( x, y, z, fx, fy, fz, enerpot )
         ! Revisar posibles indeterminaciones
-        call check_nan(x, np)
-        call check_nan(y, np)
-        call check_nan(z, np)
-        call check_nan(fx, np)
-        call check_nan(fy, np)
-        call check_nan(fz, np)
+        ! call check_nan(x, np)
+        ! call check_nan(y, np)
+        ! call check_nan(z, np)
+        ! call check_nan(fx, np)
+        ! call check_nan(fy, np)
+        ! call check_nan(fz, np)
         call IH( x, y, z, np, dij, Rz )
         epotn = enerpot/dfloat(np)
         if (mod(istep, 10000) == 0) then
@@ -101,7 +101,7 @@ PROGRAM PRINCIPAL
     ft = 0.0d0
 
     ncep = 1 ! es el paso a la hora de guardar los datos
-    ncp = 100000 !cantidad de configuraciones
+    ncp = 500000 !cantidad de configuraciones
     nprom = 0
     nconf = ncp
     pbc = 0.0d0
@@ -111,12 +111,12 @@ PROGRAM PRINCIPAL
         ! call position(x, y, z, fx, fy, fz, pbc)
         call force(x, y, z, fx, fy, fz, enerpot)
         ! Revisar posibles indeterminaciones
-        call check_nan(x, np)
-        call check_nan(y, np)
-        call check_nan(z, np)
-        call check_nan(fx, np)
-        call check_nan(fy, np)
-        call check_nan(fz, np)
+        ! call check_nan(x, np)
+        ! call check_nan(y, np)
+        ! call check_nan(z, np)
+        ! call check_nan(fx, np)
+        ! call check_nan(fy, np)
+        ! call check_nan(fz, np)
         call IH( x, y, z, np, dij, Rz )
         if ( mod(i,10000) == 0 ) then
             print*, i, enerpot/np, 'Average'
@@ -133,7 +133,7 @@ PROGRAM PRINCIPAL
         endif
     enddo
 
-    open(65,file='data/gr_BD_0.05_ih.dat',status='unknown')
+    open(65,file='data/gr_BD_0.45_ih.dat',status='unknown')
       write(65,'(3f16.8)') r(1), g(1)
 
 !      print*,dr,nprom
