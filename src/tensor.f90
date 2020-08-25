@@ -74,7 +74,7 @@ contains
             end do
         end do
 
-        sigma = mat_a + 0.00005d0
+        sigma = mat_a + 0.00001d0
         ! Descomposición de Cholesky
         call dpotrf( 'L',n*k,sigma,n*k,info )
         ! Multiplicar L*Xr para obtener el vector de números aleatorios

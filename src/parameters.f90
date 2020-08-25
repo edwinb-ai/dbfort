@@ -5,11 +5,11 @@ module box_pot_parameters
 ! CONSTANT PARAMETERS
     ! pot arguments
     real(real64), parameter :: dlr = 50.d0, dT = 1.4737d0
-    real(real64), parameter :: dla = 49.d0, deltat = 0.000005d0
+    real(real64), parameter :: dla = 49.d0, deltat = 0.000001d0
     real(real64), parameter :: a2 = (dlr/(dlr-dla))*(dlr/dla)**(dla/(dlr-dla))
 
     ! parameters arguments
-    real(real64), parameter :: phi = 0.45d0
+    real(real64), parameter :: phi = 0.50d0
     real(real64), parameter :: pi = 4.d0*datan(1.0d0)
     real(real64), parameter :: rho = 6.d0*phi/pi
     real(real64), parameter :: diam = 1.0d0

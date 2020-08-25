@@ -30,21 +30,19 @@ PROGRAM PRINCIPAL
     real(real64) :: ener, enerpot, epotn, dv, fnorm
     real(real64) :: graux, hraux, pbc = 1.0d0
 
-    integer(int32), parameter :: limT = 80000
+    integer(int32), parameter :: limT = 100000
 
     print*, 'The length of the box is: ', boxl
     print*, 'The mean interparticle distance is: ', d
     print*, 'Cut radius: ', rc
 
-    call iniconfig(x, y, z, d) ! this subroutine create the data
+    call iniconfig(x, y, z, d)
 
-    open(20, file='data/iniconfBD.dat', status='unknown')
-
-    do i=1, np
-       write(20, '(3f16.8)') x(i), y(i), z(i)
-    enddo
-
-    close(20)
+    ! open(60, file = 'data/finalconBD_045.dat', status = 'unknown')
+    ! do i = 1,np
+    !     read(60,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
+    ! enddo
+    ! close(60)
 
     !initial force on the particles
     call force( x, y, z, fx, fy, fz, ener )
@@ -65,12 +63,6 @@ PROGRAM PRINCIPAL
         call position_ih( x, y, z, fx, fy, fz, dij, Rz, pbc )
         ! call position( x, y, z, fx, fy, fz, pbc )
         call force( x, y, z, fx, fy, fz, enerpot )
-        ! Revisar posibles indeterminaciones
-        ! call check_nan(x, np)
-        ! call check_nan(y, np)
-        ! call check_nan(z, np)
-        ! call check_nan(fx, np)
-        ! call check_nan(fy, np)
         ! call check_nan(fz, np)
         call IH( x, y, z, np, dij, Rz )
         epotn = enerpot/dfloat(np)
@@ -85,7 +77,7 @@ PROGRAM PRINCIPAL
 
     print*, 'The system has thermalized'
 
-    open(60, file = 'data/finalconBD.dat', status = 'unknown')
+    open(60, file = 'data/finalconBD_050.dat', status = 'unknown')
     do i = 1,np
         write(60,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
     enddo
@@ -101,7 +93,7 @@ PROGRAM PRINCIPAL
     ft = 0.0d0
 
     ncep = 1 ! es el paso a la hora de guardar los datos
-    ncp = 500000 !cantidad de configuraciones
+    ncp = 300000 !cantidad de configuraciones
     nprom = 0
     nconf = ncp
     pbc = 0.0d0
@@ -110,13 +102,6 @@ PROGRAM PRINCIPAL
         call position_ih( x, y, z, fx, fy, fz, dij, Rz, pbc )
         ! call position(x, y, z, fx, fy, fz, pbc)
         call force(x, y, z, fx, fy, fz, enerpot)
-        ! Revisar posibles indeterminaciones
-        ! call check_nan(x, np)
-        ! call check_nan(y, np)
-        ! call check_nan(z, np)
-        ! call check_nan(fx, np)
-        ! call check_nan(fy, np)
-        ! call check_nan(fz, np)
         call IH( x, y, z, np, dij, Rz )
         if ( mod(i,10000) == 0 ) then
             print*, i, enerpot/np, 'Average'
@@ -129,11 +114,11 @@ PROGRAM PRINCIPAL
             !     cfy(nprom, j) = y(j)
             !     cfz(nprom, j) = z(j)
             ! enddo
-            call gr(x,y,z,g,dr)
+            call gr( x,y,z,g,dr )
         endif
     enddo
 
-    open(65,file='data/gr_BD_0.45_ih.dat',status='unknown')
+    open(65,file='data/gr_BD_050_ih.dat',status='old')
       write(65,'(3f16.8)') r(1), g(1)
 
 !      print*,dr,nprom
@@ -141,8 +126,8 @@ PROGRAM PRINCIPAL
       do i=2,mr
          r(i)=(i-1)*dr
          q(i)=(i-1)*dq
-         dv=4.d0*pi*r(i)**2.*dr
-         fnorm=boxl**3./(np**2*nprom*dv)
+         dv=4.d0*pi*r(i)**2.0d0*dr
+         fnorm=boxl**3.d0/( np**2.0d0 * nprom*dv )
          graux=g(i)*fnorm
          hraux=graux-1.d0
          g(i)=graux
@@ -228,9 +213,9 @@ subroutine  force(x, y, z, fx, fy, fz, ener)
             xij = x(i)-x(j)
             yij = y(i)-y(j)
             zij = z(i)-z(j)
-            xij = xij-boxl*anint(xij/boxl)
-            yij = yij-boxl*anint(yij/boxl)
-            zij = zij-boxl*anint(zij/boxl)
+            xij = xij-boxl*dnint(xij/boxl)
+            yij = yij-boxl*dnint(yij/boxl)
+            zij = zij-boxl*dnint(zij/boxl)
             rij2 = xij*xij+yij*yij+zij*zij
             rij = sqrt(rij2)
             if (rij < rc) then
@@ -344,13 +329,13 @@ subroutine gr(x,y,z,g,dr)
             xij = x(j)-x(i)
             yij = y(j)-y(i)
             zij = z(j)-z(i)
-            xij = xij-boxl*anint(xij/boxl)
-            yij = yij-boxl*anint(yij/boxl)
-            zij = zij-boxl*anint(zij/boxl)
+            xij = xij-boxl*dnint(xij/boxl)
+            yij = yij-boxl*dnint(yij/boxl)
+            zij = zij-boxl*dnint(zij/boxl)
             rij2 = xij*xij+yij*yij+zij*zij
             rij = sqrt(rij2)
             if (rij < rc) then
-                nbin = nint(rij/dr)+1
+                nbin = dnint(rij/dr)+1
                 if (nbin <= mr) then
                     g(nbin) = g(nbin)+2.0d0
                 endif

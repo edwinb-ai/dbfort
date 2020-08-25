@@ -39,9 +39,9 @@ subroutine position_ih(x, y, z, fx, fy, fz, dij, Rz, pbc)
         y(i) = y(i) + temp(ij+1)*deltat + sqtwodt*Rz(ij+1)
         z(i) = z(i) + temp(ij+2)*deltat + sqtwodt*Rz(ij+2)
         if (pbc > 0.0d0) then
-            x(i) = x(i) - boxl*anint(x(i)/boxl)
-            y(i) = y(i) - boxl*anint(y(i)/boxl)
-            z(i) = z(i) - boxl*anint(z(i)/boxl)
+            x(i) = x(i) - boxl*dnint(x(i)/boxl)
+            y(i) = y(i) - boxl*dnint(y(i)/boxl)
+            z(i) = z(i) - boxl*dnint(z(i)/boxl)
         endif
     enddo
 return
