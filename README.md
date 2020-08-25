@@ -44,7 +44,7 @@ de Fortran podrá ser usado.
 
 ## Librerías
 
-Sin embargo`LAPACK` y `BLAS` deben estar instalados en el sistema
+`LAPACK` y `BLAS` deben estar instalados en el sistema
 ya que son necesarios para compilar y realizar operaciones de álgebra lineal.
 
 # Observables
