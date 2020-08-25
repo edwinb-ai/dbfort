@@ -58,26 +58,26 @@ PROGRAM PRINCIPAL
      !The system will thermalize
 
      !Periodic boundary conditions; pbc > 0
-    open(51, file = 'data/energy_BD.dat', status = 'unknown')
+    open(51, file = 'energy_BD.dat', status = 'unknown')
     do istep = 1, limT
         call position_ih( x, y, z, fx, fy, fz, dij, Rz, pbc )
         ! call position( x, y, z, fx, fy, fz, pbc )
         call force( x, y, z, fx, fy, fz, enerpot )
         ! call check_nan(fz, np)
         call IH( x, y, z, np, dij, Rz )
-        epotn = enerpot/dfloat(np)
+        epotn = enerpot/real(np)
         if (mod(istep, 10000) == 0) then
             print*, istep, epotn, 'Thermal'
         end if
         if (mod(istep, 1000) == 0) then 
-            write(51,'(3f16.8)') dfloat(istep), epotn
+            write(51,'(3f16.8)') real(istep), epotn
         end if
     enddo
     close(51)
 
     print*, 'The system has thermalized'
 
-    open(60, file = 'data/finalconBD_050.dat', status = 'unknown')
+    open(60, file = 'finalconBD_050.dat', status = 'unknown')
     do i = 1,np
         write(60,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
     enddo
@@ -118,7 +118,7 @@ PROGRAM PRINCIPAL
         endif
     enddo
 
-    open(65,file='data/gr_BD_050_ih.dat',status='old')
+    open(65,file='gr_BD_050_ih.dat',status='old')
       write(65,'(3f16.8)') r(1), g(1)
 
 !      print*,dr,nprom

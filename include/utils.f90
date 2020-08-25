@@ -70,13 +70,14 @@ subroutine show_m(A, n, m)
     end do
 end subroutine show_m
 
-subroutine check_unity(A, n)
+subroutine check_unity(A)
     use iso_fortran_env, only: real64
     implicit none
 
-    real(real64), dimension(n,n), intent(inout) :: A
-    integer, intent(in) :: n
-    integer :: i
+    real(real64), intent(inout) :: A(:,:)
+    integer :: i,n
+
+    n = size(A,1)
 
     do i = 1, n
         if ( (A(i,i)-1.0d0) <= 0.000001 ) then
@@ -88,13 +89,14 @@ subroutine check_unity(A, n)
     print*, 'This matrix is unity!'
 end subroutine check_unity
 
-subroutine matrix_file(A, n)
+subroutine matrix_file(A)
     use iso_fortran_env, only: real64
     implicit none
 
-    real(real64), dimension(n,n), intent(inout) :: A
-    integer, intent(in) :: n
-    integer :: i,j
+    real(real64), intent(inout) :: A(:,:)
+    integer :: i,j,n
+
+    n = size(A,1)
 
     open(1, file = 'matrix.dat', status='unknown')  
     do i = 1, n
@@ -106,13 +108,14 @@ subroutine matrix_file(A, n)
     close(1)
 end subroutine matrix_file
 
-subroutine check_nan(x, n)
+subroutine check_nan(x)
     use iso_fortran_env, only: real64
     use, intrinsic :: ieee_arithmetic, only: ieee_is_nan
 
-    integer, intent(in) :: n
-    real(real64), dimension(n), intent(in) :: x
-    integer :: i
+    real(real64), intent(in) :: x(:)
+    integer :: i,n
+
+    n = size(x)
 
     do i = 1,n
         if ( ieee_is_nan(x(i)) ) then
