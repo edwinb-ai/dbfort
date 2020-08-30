@@ -8,16 +8,17 @@
 PROGRAM PRINCIPAL
     use iso_fortran_env, only: real64, int32
     use box_pot_parameters
-    use tensor
-    use utils, only: check_nan
+    use tensor, only: ih
+    use utils, only: save_timeseries
 
     implicit none
 
-    ! Local variables, note that somes variables was initialized
+    ! Variables locales
     real(real64), dimension(np) :: x, y, z, fx, fy, fz
-    real(real64), dimension(mr) :: r, g, q, sq, h ! five vector of mr dimension
+    real(real64), dimension(mr) :: r, g, q, sq, h
     real(real64), dimension(mt) :: t, wt, ft
-    real(real64), dimension(mt, np) :: cfx, cfy, cfz
+    ! Deben ser `allocatable` dado que son arreglos grandes
+    real(real64), allocatable :: cfx(:,:), cfy(:,:), cfz(:,:)
 
     real(real64), parameter :: dr = rc/mr, dq = pi/rc
     real(real64), parameter :: d = (1.0d0/rho)**(1.d0/3.d0)
@@ -26,27 +27,27 @@ PROGRAM PRINCIPAL
     real(real64), dimension(np*k, np*k) :: dij
     real(real64), dimension(np*k) :: Rz
 
-    integer(int32) :: i, istep, nprom, j, ncep, nconf, ncp
+    integer(int32) :: i, istep, nprom, j, ncep, ncp
     real(real64) :: ener, enerpot, epotn, dv, fnorm
     real(real64) :: graux, hraux, pbc = 1.0d0
 
-    integer(int32), parameter :: limT = 100000
+    integer(int32), parameter :: limT = 20000
 
     print*, 'The length of the box is: ', boxl
     print*, 'The mean interparticle distance is: ', d
     print*, 'Cut radius: ', rc
 
-    call iniconfig(x, y, z, d)
+    ! call iniconfig(x, y, z, d)
 
-    ! open(60, file = 'data/finalconBD_045.dat', status = 'unknown')
-    ! do i = 1,np
-    !     read(60,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
-    ! enddo
-    ! close(60)
+    open(60, file = 'finalconBD_040.dat', status = 'unknown')
+    do i = 1,np
+        read(60,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
+    enddo
+    close(60)
 
     !initial force on the particles
     call force( x, y, z, fx, fy, fz, ener )
-    call IH( x, y, z, np, dij, Rz )
+    ! call IH( x, y, z, np, dij, Rz )
 
     ! Cálculo inicial de interacciones hidrodinámicas, inicializar arreglos
     dij = 0.0d0
@@ -60,11 +61,11 @@ PROGRAM PRINCIPAL
      !Periodic boundary conditions; pbc > 0
     open(51, file = 'energy_BD.dat', status = 'unknown')
     do istep = 1, limT
-        call position_ih( x, y, z, fx, fy, fz, dij, Rz, pbc )
-        ! call position( x, y, z, fx, fy, fz, pbc )
+        ! call position_ih( x, y, z, fx, fy, fz, dij, Rz, pbc )
+        call position( x, y, z, fx, fy, fz, pbc )
         call force( x, y, z, fx, fy, fz, enerpot )
         ! call check_nan(fz, np)
-        call IH( x, y, z, np, dij, Rz )
+        ! call IH( x, y, z, np, dij, Rz )
         epotn = enerpot/real(np)
         if (mod(istep, 10000) == 0) then
             print*, istep, epotn, 'Thermal'
@@ -77,7 +78,7 @@ PROGRAM PRINCIPAL
 
     print*, 'The system has thermalized'
 
-    open(60, file = 'finalconBD_050.dat', status = 'unknown')
+    open(60, file = 'finalconBD_040.dat', status = 'unknown')
     do i = 1,np
         write(60,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
     enddo
@@ -92,49 +93,65 @@ PROGRAM PRINCIPAL
     wt = 0.0d0
     ft = 0.0d0
 
-    ncep = 1 ! es el paso a la hora de guardar los datos
-    ncp = 300000 !cantidad de configuraciones
+    ncep = 100 ! Modificar este parámetro
+    ncp = 3000000
     nprom = 0
-    nconf = ncp
     pbc = 0.0d0
 
-    do i = 1, nconf
-        call position_ih( x, y, z, fx, fy, fz, dij, Rz, pbc )
-        ! call position(x, y, z, fx, fy, fz, pbc)
-        call force(x, y, z, fx, fy, fz, enerpot)
-        call IH( x, y, z, np, dij, Rz )
-        if ( mod(i,10000) == 0 ) then
+    allocate( cfx(mt,np),cfy(mt,np),cfz(mt,np) )
+
+    do i = 1, ncp
+        ! call position_ih( x, y, z, fx, fy, fz, dij, Rz, pbc )
+        call position( x, y, z, fx, fy, fz, pbc )
+        call force( x, y, z, fx, fy, fz, enerpot )
+        ! call IH( x, y, z, np, dij, Rz )
+        if ( mod(i,100000) == 0 ) then
             print*, i, enerpot/np, 'Average'
         end if
         if ( mod(i, ncep) == 0 ) then
             nprom = nprom + 1
-            ! t(nprom) = deltat*ncep*(nprom-1)
-            ! do j = 1, np
-            !     cfx(nprom, j) = x(j)
-            !     cfy(nprom, j) = y(j)
-            !     cfz(nprom, j) = z(j)
-            ! enddo
-            call gr( x,y,z,g,dr )
-        endif
+            t(nprom) = deltat*ncep*(nprom-1)
+            do j = 1, np
+                cfx(nprom, j) = x(j)
+                cfy(nprom, j) = y(j)
+                cfz(nprom, j) = z(j)
+            enddo
+            ! call gr( x,y,z,g,dr )
+        end if
+    end do
+
+!     open(65,file='gr_BD_040_ih.dat',status='old')
+!       write(65,'(3f16.8)') r(1), g(1)
+
+! !      print*,dr,nprom
+
+!     do i=2,mr
+!         r(i)=(i-1)*dr
+!         q(i)=(i-1)*dq
+!         dv=4.d0*pi*r(i)**2.0d0*dr
+!         fnorm=boxl**3.d0/( np**2.0d0 * nprom*dv )
+!         graux=g(i)*fnorm
+!         hraux=graux-1.d0
+!         g(i)=graux
+!         h(i)=hraux
+!         write(65,'(3f16.8)')r(i),graux,hraux
+!     enddo
+!     close(65)
+
+    
+    call difusion( nprom,cfx,cfy,cfz,t,wt,ft )
+    open(80,file='wt_p512_phi040.dat',status='unknown')
+
+    do i=1,(ncp/ncep)-1
+        write(80,"(3f16.8)") t(i+1),wt(i),ft(i)
     enddo
 
-    open(65,file='gr_BD_050_ih.dat',status='old')
-      write(65,'(3f16.8)') r(1), g(1)
+    close(80)
 
-!      print*,dr,nprom
-
-      do i=2,mr
-         r(i)=(i-1)*dr
-         q(i)=(i-1)*dq
-         dv=4.d0*pi*r(i)**2.0d0*dr
-         fnorm=boxl**3.d0/( np**2.0d0 * nprom*dv )
-         graux=g(i)*fnorm
-         hraux=graux-1.d0
-         g(i)=graux
-         h(i)=hraux
-         write(65,'(3f16.8)')r(i),graux,hraux
-      enddo
-      close(65)
+    print*, "Saving MSD to files..."
+    call save_timeseries( 'msd_data/msd_',cfx,cfy,cfz )
+    deallocate( cfx,cfy,cfz )
+    print*, "Done!"
 
 END PROGRAM PRINCIPAL
 

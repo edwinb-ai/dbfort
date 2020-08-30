@@ -10,7 +10,7 @@ public ih
 
 contains
 
-    subroutine IH( x, y, z, k, mat_a, R )
+    subroutine IH(x, y, z, k, mat_a, R)
         !declaracion de variables
         integer, parameter :: n = 3 !la dimension de la matriz (x,y,z)
         integer, intent(in) :: k   ! numero de submatrices (particulas)
@@ -109,7 +109,7 @@ contains
         sqrddist = sqrt( rij )
         call unit_matrix( ident )
 
-        if (sqrddist .ge. 1.0d0) then
+        if (sqrddist >= 1.0d0) then
             prodout = outerprod_d( temp, temp ) / rij
             Dij = ident + prodout
             

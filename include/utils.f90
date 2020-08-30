@@ -1,7 +1,7 @@
 module utils
 implicit none
 private
-public unit_matrix, cholesky, check_nan
+public unit_matrix, cholesky, check_nan,save_timeseries
 
 contains
 
@@ -112,7 +112,7 @@ subroutine check_nan(x)
     use iso_fortran_env, only: real64
     use, intrinsic :: ieee_arithmetic, only: ieee_is_nan
 
-    real(real64), intent(in) :: x(:)
+    real(kind=real64), intent(in) :: x(:)
     integer :: i,n
 
     n = size(x)
@@ -124,5 +124,32 @@ subroutine check_nan(x)
         end if
     end do
 end subroutine check_nan
+
+subroutine save_timeseries(filename,x,y,z)
+    use iso_fortran_env, only: real64, int32
+
+    real(kind=real64), intent(in) :: x(:,:),y(:,:),z(:,:)
+    character(len=*), intent(in) :: filename
+    character(len=1024) :: newname
+    character(len=8) :: fmt
+    character(len=8) :: x1
+    integer(kind=int32) :: i, j, n, m
+
+    n = size(x,1)
+    m = size(x,2)
+    fmt = '(I5.1)'
+
+    ! Ciclar sobre todas las partículas
+    do i = 1, m
+        write(x1,fmt) i
+        newname = filename//trim(adjustl(x1))//'.dat'
+        open(60, file=newname, status="new")
+        do j = 1, n
+            write(60,'(3f16.8)') x(j, i),y(j, i),z(j, i)
+        end do
+        close(60)
+    end do
+
+end subroutine save_timeseries
 
 end module utils
