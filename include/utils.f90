@@ -35,13 +35,13 @@ subroutine iniconfig(xc, yc, zc, d)
 end subroutine iniconfig
 
 subroutine unit_matrix(mat) ! matrix dimension
-    real(dp), DIMENSION(:, :), INTENT(OUT) :: mat
+    real(dp), intent(inout) :: mat(:, :)
     ! Local:
     integer :: i, n
 
     n = min(size(mat, 1), size(mat, 2))
 
-    mat(:, :) = 0.0_dp
+    mat = 0.0_dp
 
     do i=1, n
         mat(i, i) = 1.0_dp
@@ -49,14 +49,14 @@ subroutine unit_matrix(mat) ! matrix dimension
 
 end subroutine unit_matrix
 
-subroutine cholesky(m, mat_a, sigma)
-    !Global variables
-    integer, intent(in) :: m
-    real(dp), intent(in), dimension(m, m) :: mat_a
-    real(dp), intent(out), dimension(m, m):: sigma
+subroutine cholesky(mat_a, sigma)
+    real(dp), intent(in) :: mat_a(:,:)
+    real(dp), intent(out):: sigma(:,:)
 
     !Local variable
-    integer :: i, j
+    integer :: i, j, m
+
+    m = size(mat_a, 1)
 
     sigma = 0.0_dp
 
