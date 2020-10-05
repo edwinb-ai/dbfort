@@ -18,9 +18,9 @@ module positions
         ! Local variables
         integer :: i, j, ij
         integer, parameter :: k = 3 ! Dimensión espacial del sistema
-        real(dp), dimension(k, np) :: fuerzas
-        real(dp), dimension(np*k) :: temp
-        real(dp), dimension(k) :: mulout
+        real(dp) :: fuerzas(k, np)
+        real(dp) :: temp(np*k)
+        real(dp) :: mulout
 
         fuerzas(1, :) = fx
         fuerzas(2, :) = fy
@@ -58,12 +58,6 @@ module positions
         integer, intent(in):: pbc
         ! Local variables
         integer :: i
-        ! real(dp) :: rng(np)
-
-        ! Crear la distribución uniforme
-        ! call random_number(rng)
-        ! rng = (rng * 2.0_dp) - 1.0_dp
-        ! rng = sqtwodt * rng * sqrt(3.0_dp)
 
         do i = 1, np
             x(i) = x(i) + (fx(i)*deltat) + (sqtwodt*gasdev())

@@ -9,8 +9,6 @@ program principal
 
     implicit none
 
-    
-
     ! Variables locales
     real(dp), allocatable :: x(:), y(:), z(:)
     real(dp), allocatable :: fx(:), fy(:), fz(:)
@@ -42,8 +40,6 @@ program principal
     rho = 6.0_dp * phi / pi
     boxl = (np/rho)**(1._dp/3._dp)
     rc = boxl / 2.0_dp
-    print*, np, phi
-
     d = (1.0_dp/rho)**(1._dp/3._dp)
     dr = rc/mr
     dq = pi/rc
@@ -58,9 +54,10 @@ program principal
     allocate( Rz(np*k) )
     allocate( cfx(mt,np),cfy(mt,np),cfz(mt,np) )
 
+    ! Crear la configuración inicial de malla
     call iniconfig(x, y, z, d)
 
-    !initial force on the particles
+    ! Calcular la energía y fuerza iniciales
     call force( x, y, z, fx, fy, fz, ener )
     ! call IH( x, y, z, np, dij, Rz )
 
@@ -71,8 +68,7 @@ program principal
     !Energy of the initial configuration
     print*, 'E/N = ', ener/np
 
-    !The system will thermalize
-
+    ! Comienza la termalización
     !Periodic boundary conditions; pbc > 0
     open(51, file = 'energy_BD.dat', status = 'unknown')
     do istep = 1, limT
@@ -100,7 +96,7 @@ program principal
     close(60)
     !Thermalization ends
 
-    !cycle to calculate the g(r), h, sq, t, wt, ft
+    ! Aquí se inicializan los arreglos para el cálculo de las observables
     g = 0.0_dp
     h = 0.0_dp
     t = 0.0_dp
@@ -116,6 +112,7 @@ program principal
     cfy = 0.0_dp
     cfz = 0.0_dp
 
+    ! Ciclos de promediación para observables
     do i = 1, ncp
         ! call position_ih( x, y, z, fx, fy, fz, dij, Rz, pbc )
         call position( x, y, z, fx, fy, fz, pbc )
@@ -132,12 +129,12 @@ program principal
                 cfy(nprom, j) = y(j)
                 cfz(nprom, j) = z(j)
             end do
-            call gr( x,y,z,g,dr,pbc ) ! Con PBC
+            call gr( x,y,z,g,dr,1 ) ! Siempre con PBC
         end if
     end do
 
-    open(65,file='gr_BD.dat',status='unknown')
-      write(65,'(3f16.8)') r(1), g(1)
+    open(newunit=u, file='gr_BD.dat', status='unknown')
+    write(u,'(3f16.8)') r(1), g(1)
 
     do i=2,mr
         r(i)=(i-1)*dr
@@ -147,19 +144,19 @@ program principal
         hraux=graux-1._dp
         g(i)=graux
         h(i)=hraux
-        write(65,'(3f16.8)')r(i),graux,hraux
+        write(u,'(3f16.8)')r(i),graux,hraux
     end do
-    close(65)
+    close(u)
 
     
     call difusion( nprom,cfx,cfy,cfz,t,wt,ft )
-    open(80,file='wt_fself.dat',status='unknown')
+    open(newunit=u,file='wt_fself.dat',status='unknown')
 
     do i=1,(ncp/ncep)-1
-        write(80,"(3f16.8)") t(i+1),wt(i),ft(i)
+        write(u,"(3f16.8)") t(i+1),wt(i),ft(i)
     end do
 
-    close(80)
+    close(u)
 
     ! print*, "Saving MSD to files..."
     ! call save_timeseries( 'msd_data/msd_',cfx,cfy,cfz )
