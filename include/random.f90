@@ -3,7 +3,7 @@ use iso_fortran_env, only: real64
 
 implicit none
 private
-public gasdev
+public :: gasdev
 
 contains
 
@@ -30,7 +30,6 @@ contains
             gset = v2 * fac
             available = .true.
         end if
-        return
     end function gasdev
 
 end module randomm

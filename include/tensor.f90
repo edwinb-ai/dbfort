@@ -10,7 +10,7 @@ public ih
 
 contains
 
-    subroutine IH(x, y, z, k, mat_a, R)
+    subroutine ih(x, y, z, k, mat_a, R)
         !declaracion de variables
         integer, parameter :: n = 3 !la dimension de la matriz (x,y,z)
         integer, intent(in) :: k   ! numero de submatrices (particulas)
@@ -22,7 +22,7 @@ contains
         real(real64), dimension(n, k) :: datos ! (3, particulas)
 
         ! i dif j
-        real(real64), DIMENSION(n, n) :: Dij
+        real(real64), dimension(n, n) :: Dij
         real(real64), dimension(n) :: part1 !
         real(real64), dimension(n) :: part2 !
         real(real64), dimension(n, n) :: ident
@@ -60,17 +60,16 @@ contains
 
         do ix = 1, k
             il = (ix * n) - n + 1
-            do ij = (ix+1), k
+            do ij = ix+1, k
                 pos = (ij*n) - n + 1
 
                 part1 = datos(:, ix)
                 part2 = datos(:, ij)
 
-                call matrizDij( part1, part2, Dij, n )
+                call matrizDij( part1,part2,Dij,n )
 
                 mat_a(il:il+n-1,pos:pos+n-1) = Dij
                 mat_a(pos:pos+n-1,il:il+n-1) = Dij
-                
             end do
         end do
 
@@ -80,7 +79,7 @@ contains
         ! Multiplicar L*Xr para obtener el vector de números aleatorios
         ! R = matmul( sigma, Xr )
         call dgemv( 'n',n*k,n*k,1.0d0,sigma,n*k,Xr,1,0.0d0,R,1 )
-    end subroutine IH
+    end subroutine ih
 
 
     subroutine matrizDij(part1, part2, Dij, n)
@@ -95,7 +94,7 @@ contains
         real(real64), dimension(n, n) :: ident, prodout
         real(real64), dimension(n) :: temp
 
-        !! Calcular las distancias
+        ! Calcular las distancias
         xij = part1(1) - part2(1)
         yij = part1(2) - part2(2)
         zij = part1(3) - part2(3)

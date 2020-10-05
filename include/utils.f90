@@ -1,15 +1,12 @@
 module utils
-implicit none
-private
-public unit_matrix, cholesky, check_nan,save_timeseries
+    use iso_fortran_env, only: real64, int32
+    implicit none
+    private
+    public unit_matrix, cholesky, check_nan,save_timeseries
 
 contains
 
 subroutine unit_matrix(mat) ! matrix dimension
-
-    ! Sets matrix to be a unit matrix.
-    use iso_fortran_env, only: real64, int32
-
     real(real64), DIMENSION(:, :), INTENT(OUT) :: mat
     ! Local:
     integer(int32) :: i, n
@@ -25,9 +22,6 @@ subroutine unit_matrix(mat) ! matrix dimension
 end subroutine unit_matrix
 
 subroutine cholesky(m, mat_a, sigma)
-    use iso_fortran_env, only: real64, int32
-    implicit none
-
     !Global variables
     integer(int32), intent(in) :: m
     real(real64), intent(in), dimension(m, m) :: mat_a
@@ -55,12 +49,6 @@ end subroutine cholesky
 
 !! gasdev : Returns a normally distributed deviate with zero mean and unit variance from Numerical recipes
 subroutine show_m(A, n, m)
-    !! Subrutina simple para imprimir un arreglo de nxm
-    !! como matriz en la terminal
-    use iso_fortran_env, only: real64
-
-    implicit none
-
     integer, intent(in) :: n, m
     real(real64), intent(in), dimension(n, m) :: A
     integer :: ix
@@ -71,9 +59,6 @@ subroutine show_m(A, n, m)
 end subroutine show_m
 
 subroutine check_unity(A)
-    use iso_fortran_env, only: real64
-    implicit none
-
     real(real64), intent(inout) :: A(:,:)
     integer :: i,n
 
@@ -90,9 +75,6 @@ subroutine check_unity(A)
 end subroutine check_unity
 
 subroutine matrix_file(A)
-    use iso_fortran_env, only: real64
-    implicit none
-
     real(real64), intent(inout) :: A(:,:)
     integer :: i,j,n
 
@@ -109,10 +91,9 @@ subroutine matrix_file(A)
 end subroutine matrix_file
 
 subroutine check_nan(x)
-    use iso_fortran_env, only: real64
     use, intrinsic :: ieee_arithmetic, only: ieee_is_nan
 
-    real(kind=real64), intent(in) :: x(:)
+    real(real64), intent(in) :: x(:)
     integer :: i,n
 
     n = size(x)
@@ -126,14 +107,12 @@ subroutine check_nan(x)
 end subroutine check_nan
 
 subroutine save_timeseries(filename,x,y,z)
-    use iso_fortran_env, only: real64, int32
-
-    real(kind=real64), intent(in) :: x(:,:),y(:,:),z(:,:)
+    real(real64), intent(in) :: x(:,:), y(:,:), z(:,:)
     character(len=*), intent(in) :: filename
     character(len=1024) :: newname
     character(len=8) :: fmt
     character(len=8) :: x1
-    integer(kind=int32) :: i, j, n, m
+    integer(int32) :: i, j, n, m
 
     n = size(x,1)
     m = size(x,2)
@@ -145,7 +124,7 @@ subroutine save_timeseries(filename,x,y,z)
         newname = filename//trim(adjustl(x1))//'.dat'
         open(60, file=newname, status="new")
         do j = 1, n
-            write(60,'(3f16.8)') x(j, i),y(j, i),z(j, i)
+            write(60,'(f13.8,A,f13.8,A,f13.8)') x(j, i),',',y(j, i),',',z(j, i)
         end do
         close(60)
     end do

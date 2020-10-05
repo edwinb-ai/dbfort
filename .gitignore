@@ -5,5 +5,11 @@
 data/
 
 # Directorios de compilación
-build*/
+build/
 *.mod
+test/
+
+# Ignorar archivos de Python
+*.py
+poetry.lock
+pyproject.toml
