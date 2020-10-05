@@ -1,5 +1,5 @@
 module tensor
-use iso_fortran_env, only: real64, int32
+use types
 use outerprod
 use utils, only: unit_matrix
 use randomm, only: gasdev
@@ -14,29 +14,23 @@ contains
         !declaracion de variables
         integer, parameter :: n = 3 !la dimension de la matriz (x,y,z)
         integer, intent(in) :: k   ! numero de submatrices (particulas)
+        real(dp), intent(in) :: x(:), y(:), z(:)
 
-        !real(real64)(KIND = wreal(real64)), dimension(n, n) :: ident0
-        real(real64), intent(in), dimension(k) :: x !
-        real(real64), intent(in), dimension(k) :: y !
-        real(real64), intent(in), dimension(k) :: z !
-        real(real64), dimension(n, k) :: datos ! (3, particulas)
+        ! Variables locales
+        real(dp) :: datos(n, k)
+        real(dp) :: Dij(n, n)
+        real(dp) :: part1(n)
+        real(dp) :: part2(n)
+        real(dp) :: ident(n, n)
 
-        ! i dif j
-        real(real64), dimension(n, n) :: Dij
-        real(real64), dimension(n) :: part1 !
-        real(real64), dimension(n) :: part2 !
-        real(real64), dimension(n, n) :: ident
-
-        real(real64), dimension(n*k) :: Xr !
-        real(real64), dimension(n*k), intent(out) :: R !
+        real(dp) :: Xr(n*k)
+        real(dp), intent(out) :: R(n*k)
 
         integer :: ix, ij, pos, il   ! indices
         integer :: info
 
-        real(real64), dimension(n*k, n*k), intent(out) :: mat_a
-        real(real64), dimension(n*k, n*k) :: sigma
-
-        ! real(real64), external :: gasdev ! function
+        real(dp), intent(out) :: mat_a(n*k, n*k)
+        real(dp) :: sigma(n*k, n*k)
 
         ! Concatenarlos para construir la matriz
         datos(1, :) = x
@@ -44,10 +38,10 @@ contains
         datos(3, :) = z
 
         call unit_matrix( ident )
-        R = 0.0d0
-        Xr = 0.0d0
-        mat_a = 0.0d0
-        Dij = 0.0d0
+        R = 0.0_dp
+        Xr = 0.0_dp
+        mat_a = 0.0_dp
+        Dij = 0.0_dp
 
         ! Distribucion normal estándar
         do ix = 1, k*n
@@ -73,26 +67,26 @@ contains
             end do
         end do
 
-        sigma = mat_a + 0.00001d0
+        sigma = mat_a + 0.00001_dp
         ! Descomposición de Cholesky
         call dpotrf( 'L',n*k,sigma,n*k,info )
         ! Multiplicar L*Xr para obtener el vector de números aleatorios
         ! R = matmul( sigma, Xr )
-        call dgemv( 'n',n*k,n*k,1.0d0,sigma,n*k,Xr,1,0.0d0,R,1 )
+        call dgemv( 'n',n*k,n*k,1.0_dp,sigma,n*k,Xr,1,0.0_dp,R,1 )
     end subroutine ih
 
 
     subroutine matrizDij(part1, part2, Dij, n)
         ! Variables de entrada y salida
-        integer(int32), intent(in) :: n
-        real(real64), dimension(n), intent(in) :: part1 !
-        real(real64), dimension(n), intent(in) :: part2 !
-        real(real64), dimension(n, n), intent(out) :: Dij
+        integer, intent(in) :: n
+        real(dp), intent(in) :: part1(:)
+        real(dp), intent(in) :: part2(:)
+        real(dp), intent(out) :: Dij(:,:)
 
         ! Variables locales
-        real(real64) :: rij,sqrddist,xij,yij,zij
-        real(real64), dimension(n, n) :: ident, prodout
-        real(real64), dimension(n) :: temp
+        real(dp) :: rij,sqrddist,xij,yij,zij
+        real(dp) :: ident(n, n), prodout(n, n)
+        real(dp) :: temp(n)
 
         ! Calcular las distancias
         xij = part1(1) - part2(1)
@@ -102,22 +96,22 @@ contains
         temp = [xij, yij, zij]
 
         ! calculando Dij
-        Dij = 0.0d0
-        prodout = 0.0d0
+        Dij = 0.0_dp
+        prodout = 0.0_dp
 
         sqrddist = sqrt( rij )
         call unit_matrix( ident )
 
-        if (sqrddist >= 1.0d0) then
+        if (sqrddist >= 1.0_dp) then
             prodout = outerprod_d( temp, temp ) / rij
             Dij = ident + prodout
             
-            Dij = Dij + ( (ident/3.0d0) - prodout )/(2.0d0*rij)
+            Dij = Dij + ( (ident/3.0_dp) - prodout )/(2.0_dp*rij)
             
-            Dij = 3.0d0*Dij/(8.0d0*sqrddist)
+            Dij = 3.0_dp*Dij/(8.0_dp*sqrddist)
         else
-            Dij = (1.0d0-(9.0d0*sqrddist/16.0d0))*ident
-            Dij = Dij + 3.0d0*outerprod_d( temp, temp )/(16.0d0*sqrddist)
+            Dij = (1.0_dp-(9.0_dp*sqrddist/16.0_dp))*ident
+            Dij = Dij + 3.0_dp*outerprod_d( temp, temp )/(16.0_dp*sqrddist)
         end if
     end subroutine matrizDij
 end module tensor

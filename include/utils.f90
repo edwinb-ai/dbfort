@@ -1,40 +1,68 @@
 module utils
-    use iso_fortran_env, only: real64, int32
+    use types
+    use box_pot_parameters
     implicit none
     private
-    public unit_matrix, cholesky, check_nan,save_timeseries
+    public unit_matrix, cholesky, check_nan, save_timeseries, iniconfig
 
 contains
 
+subroutine iniconfig(xc, yc, zc, d)
+! defining three vector of mp dimension, it indicate that only are out variables
+    real(dp), intent(out) :: xc(:), yc(:), zc(:)
+    real(dp), intent(in) :: d
+    ! Local variables
+    integer :: i
+
+    xc(1) = -(boxl-d)/2.0_dp
+    yc(1) = -(boxl-d)/2.0_dp
+    zc(1) = -(boxl-d)/2.0_dp
+
+    do i = 2,np
+        xc(i) = xc(i-1) + d
+        yc(i) = yc(i-1)
+        zc(i) = zc(i-1)
+        if (xc(i) > rc) then
+            xc(i) = xc(1)
+            yc(i) = yc(i-1) + d
+            if (yc(i) > rc) then
+                xc(i) = xc(1)
+                yc(i) = yc(1)
+                zc(i) = zc(i-1) + d
+            end if
+        end if
+    end do
+end subroutine iniconfig
+
 subroutine unit_matrix(mat) ! matrix dimension
-    real(real64), DIMENSION(:, :), INTENT(OUT) :: mat
+    real(dp), DIMENSION(:, :), INTENT(OUT) :: mat
     ! Local:
-    integer(int32) :: i, n
+    integer :: i, n
 
     n = min(size(mat, 1), size(mat, 2))
 
-    mat(:, :) = 0.0d0
+    mat(:, :) = 0.0_dp
 
     do i=1, n
-        mat(i, i) = 1.0d0
+        mat(i, i) = 1.0_dp
     end do
 
 end subroutine unit_matrix
 
 subroutine cholesky(m, mat_a, sigma)
     !Global variables
-    integer(int32), intent(in) :: m
-    real(real64), intent(in), dimension(m, m) :: mat_a
-    real(real64), intent(out), dimension(m, m):: sigma
+    integer, intent(in) :: m
+    real(dp), intent(in), dimension(m, m) :: mat_a
+    real(dp), intent(out), dimension(m, m):: sigma
 
     !Local variable
-    integer(int32) :: i, j
+    integer :: i, j
 
-    sigma = 0.0d0
+    sigma = 0.0_dp
 
     do j = 1, m
         sigma(j, j) = sqrt( mat_a(j, j) - dot_product(sigma(j,1:j-1),sigma(j,1:j-1)) )
-        if ( sigma(j, j) <= 0.000001d0 ) then
+        if ( sigma(j, j) <= 0.000001_dp ) then
             print*, 'Numerical instability'
             print*, sigma(j, j)
             stop
@@ -50,7 +78,7 @@ end subroutine cholesky
 !! gasdev : Returns a normally distributed deviate with zero mean and unit variance from Numerical recipes
 subroutine show_m(A, n, m)
     integer, intent(in) :: n, m
-    real(real64), intent(in), dimension(n, m) :: A
+    real(dp), intent(in), dimension(n, m) :: A
     integer :: ix
 
     do ix = 1, n
@@ -59,13 +87,13 @@ subroutine show_m(A, n, m)
 end subroutine show_m
 
 subroutine check_unity(A)
-    real(real64), intent(inout) :: A(:,:)
+    real(dp), intent(inout) :: A(:,:)
     integer :: i,n
 
     n = size(A,1)
 
     do i = 1, n
-        if ( (A(i,i)-1.0d0) <= 0.000001 ) then
+        if ( (A(i,i)-1.0_dp) <= 0.000001 ) then
             print*, 'Not unity!'
             stop
         end if
@@ -75,7 +103,7 @@ subroutine check_unity(A)
 end subroutine check_unity
 
 subroutine matrix_file(A)
-    real(real64), intent(inout) :: A(:,:)
+    real(dp), intent(inout) :: A(:,:)
     integer :: i,j,n
 
     n = size(A,1)
@@ -93,7 +121,7 @@ end subroutine matrix_file
 subroutine check_nan(x)
     use, intrinsic :: ieee_arithmetic, only: ieee_is_nan
 
-    real(real64), intent(in) :: x(:)
+    real(dp), intent(in) :: x(:)
     integer :: i,n
 
     n = size(x)
@@ -107,12 +135,12 @@ subroutine check_nan(x)
 end subroutine check_nan
 
 subroutine save_timeseries(filename,x,y,z)
-    real(real64), intent(in) :: x(:,:), y(:,:), z(:,:)
+    real(dp), intent(in) :: x(:,:), y(:,:), z(:,:)
     character(len=*), intent(in) :: filename
     character(len=1024) :: newname
     character(len=8) :: fmt
     character(len=8) :: x1
-    integer(int32) :: i, j, n, m
+    integer :: i, j, n, m
 
     n = size(x,1)
     m = size(x,2)

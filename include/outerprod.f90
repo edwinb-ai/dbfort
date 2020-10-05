@@ -1,5 +1,5 @@
 module outerprod
-    use iso_fortran_env, only: real64
+    use types
 
     implicit none
     private
@@ -7,9 +7,9 @@ module outerprod
 
 contains
 
-function outerprod_d(a,b)
-    real(real64), DIMENSION(:), INTENT(IN) :: a,b
-    real(real64), DIMENSION(size(a), size(b)) :: outerprod_d
+function outerprod_d(a, b)
+    real(dp), intent(in) :: a(:), b(:)
+    real(dp) :: outerprod_d(size(a), size(b))
 
     outerprod_d = spread(a, dim=2, ncopies=size(b)) * &
                     spread(b, dim=1, ncopies=size(a))
