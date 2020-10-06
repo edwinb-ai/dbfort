@@ -57,13 +57,13 @@ program principal
     allocate( t(mt), wt(mt), ft(mt) )
 
     ! Crear la configuración inicial de malla
-    ! call iniconfig(x, y, z, d)
+    call iniconfig(x, y, z, d)
 
-    open(newunit=u, file = 'finalconBD.dat', status = 'unknown')
-    do i = 1,np
-        read(u,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
-    end do
-    close(u)
+    ! open(newunit=u, file = 'finalconBD.dat', status = 'unknown')
+    ! do i = 1,np
+    !     read(u,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
+    ! end do
+    ! close(u)
 
     ! Cálculo inicial de interacciones hidrodinámicas, inicializar arreglos
     dij = 0.0_dp
