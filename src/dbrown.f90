@@ -29,7 +29,7 @@ program principal
     ! real(dp) :: graux, hraux
     integer :: pbc = 1
 
-    integer, parameter :: limT = 100000
+    integer, parameter :: limT = 1000000
 
     ! Leer de un archivo de entrada los valores del usuario
     integer :: u
