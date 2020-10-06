@@ -18,6 +18,7 @@ module box_pot_parameters
     ! Dependen del usuario
     real(dp) :: phi, rho, boxl, rc
     integer :: np
+    logical :: with_ih ! Para prender o apagar las IH
 
     ! mp and mr arguments
     integer, parameter :: mp = 1024, mr = 2**9

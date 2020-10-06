@@ -3,7 +3,7 @@ module utils
     use box_pot_parameters
     implicit none
     private
-    public unit_matrix, cholesky, check_nan, save_timeseries, iniconfig
+    public unit_matrix, cholesky, check_nan, save_timeseries, iniconfig, show_m
 
 contains
 
@@ -76,10 +76,11 @@ subroutine cholesky(mat_a, sigma)
 end subroutine cholesky
 
 !! gasdev : Returns a normally distributed deviate with zero mean and unit variance from Numerical recipes
-subroutine show_m(A, n, m)
-    integer, intent(in) :: n, m
-    real(dp), intent(in), dimension(n, m) :: A
-    integer :: ix
+subroutine show_m(A)
+    real(dp), intent(in) :: A(:,:)
+    integer :: ix, n
+
+    n = size(A, 1)
 
     do ix = 1, n
         write(*,*) A(ix, :)

@@ -20,7 +20,7 @@ module positions
         integer, parameter :: k = 3 ! Dimensión espacial del sistema
         real(dp) :: fuerzas(k, np)
         real(dp) :: temp(np*k)
-        real(dp) :: mulout
+        real(dp) :: mulout(k)
 
         fuerzas(1, :) = fx
         fuerzas(2, :) = fy
@@ -31,8 +31,10 @@ module positions
         do i = 1, k*np, k
             do j = 1, np-1
                 ij = (k*j) - k + 1
-                call dgemv( 'n',k,k,1.0_dp,dij(i:i+2,ij:ij+2),k,fuerzas(:, j),1,0._dp,mulout,1 )
-                ! temp(i:i+2) = temp(i:i+2) + matmul( dij(i:i+2,ij:ij+2), fuerzas(:, j) )
+                call dgemv( 'n',k,k,1.0_dp,dij(i:i+2,ij:ij+2),&
+                    k,fuerzas(:, j),1,0._dp,mulout,1 )
+                ! temp(i:i+2) = temp(i:i+2) + &
+                !     matmul( dij(i:i+2,ij:ij+2), fuerzas(:, j) )
                 temp(i:i+2) = temp(i:i+2) + mulout
             end do
         end do

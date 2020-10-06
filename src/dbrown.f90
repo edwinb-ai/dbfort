@@ -1,9 +1,9 @@
 program principal
     use types
     use box_pot_parameters
-    ! use tensor, only: ih
-    use utils, only: save_timeseries, iniconfig
-    use positions, only: position
+    use tensor, only: ih
+    use utils, only: save_timeseries, iniconfig, show_m
+    use positions, only: position, position_ih
     use energies
     use observables
 
@@ -13,7 +13,7 @@ program principal
     real(dp), allocatable :: x(:), y(:), z(:)
     real(dp), allocatable :: fx(:), fy(:), fz(:)
     real(dp) :: r(mr), g(mr), h(mr)
-    real(dp) :: t(mt), wt(mt), ft(mt)
+    real(dp), allocatable :: t(:), wt(:), ft(:)
     ! Deben ser `allocatable` dado que son arreglos grandes
     real(dp), allocatable :: cfx(:,:), cfy(:,:), cfz(:,:)
 
@@ -26,15 +26,15 @@ program principal
 
     integer :: i, istep, nprom, j, ncep, ncp
     real(dp) :: ener, enerpot, epotn, dv, fnorm
-    real(dp) :: graux, hraux
+    ! real(dp) :: graux, hraux
     integer :: pbc = 1
 
-    integer, parameter :: limT = 1000000
+    integer, parameter :: limT = 100000
 
     ! Leer de un archivo de entrada los valores del usuario
     integer :: u
     open(newunit=u, file = 'entrada.in', status = 'old')
-    read(u, *) phi, np
+    read(u, *) phi, np, with_ih
     close(u)
     ! Actualizar los parámetros de simulación
     rho = 6.0_dp * phi / pi
@@ -47,30 +47,38 @@ program principal
     print*, 'The length of the box is: ', boxl
     print*, 'The mean interparticle distance is: ', d
     print*, 'Cut radius: ', rc
+    if (with_ih) print*, 'With hydrodynamic interactions'
 
     ! Inicializar la memoria de los arreglos
     allocate( x(np), y(np), z(np), fx(np), fy(np), fz(np) )
     allocate( dij(np*k, np*k) )
     allocate( Rz(np*k) )
     allocate( cfx(mt,np),cfy(mt,np),cfz(mt,np) )
+    allocate( t(mt), wt(mt), ft(mt) )
 
     ! Crear la configuración inicial de malla
-    call iniconfig(x, y, z, d)
+    ! call iniconfig(x, y, z, d)
 
-    ! Calcular la energía y fuerza iniciales
-    call force( x, y, z, fx, fy, fz, ener )
-    ! call IH( x, y, z, np, dij, Rz )
+    open(newunit=u, file = 'finalconBD.dat', status = 'unknown')
+    do i = 1,np
+        read(u,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
+    end do
+    close(u)
 
     ! Cálculo inicial de interacciones hidrodinámicas, inicializar arreglos
     dij = 0.0_dp
     Rz = 0.0_dp
+
+    ! Calcular la energía y fuerza iniciales
+    call force( x, y, z, fx, fy, fz, ener )
+    if (with_ih) call ih( x, y, z, np, dij, Rz )
 
     !Energy of the initial configuration
     print*, 'E/N = ', ener/np
 
     ! Comienza la termalización
     !Periodic boundary conditions; pbc > 0
-    open(51, file = 'energy_BD.dat', status = 'unknown')
+    open(newunit=u, file = 'energy_BD.dat', status = 'unknown')
     do istep = 1, limT
         ! call position_ih( x, y, z, fx, fy, fz, dij, Rz, pbc )
         call position( x, y, z, fx, fy, fz, pbc )
@@ -82,18 +90,18 @@ program principal
             print*, istep, epotn, 'Thermal'
         end if
         if (mod(istep, 10000) == 0) then 
-            write(51,'(3f16.8)') real(istep), epotn
+            write(u,'(3f16.8)') real(istep), epotn
         end if
     end do
-    close(51)
+    close(u)
 
     print*, 'The system has thermalized'
 
-    open(60, file = 'finalconBD.dat', status = 'unknown')
+    open(newunit=u, file = 'finalconBD.dat', status = 'unknown')
     do i = 1,np
-        write(60,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
+        write(u,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
     end do
-    close(60)
+    close(u)
     !Thermalization ends
 
     ! Aquí se inicializan los arreglos para el cálculo de las observables
@@ -112,12 +120,20 @@ program principal
     cfy = 0.0_dp
     cfz = 0.0_dp
 
+    ! Se inicializa el tensor de difusión y los números aleatorios
+    if (with_ih) call ih( x, y, z, np, dij, Rz )
+
     ! Ciclos de promediación para observables
     do i = 1, ncp
-        ! call position_ih( x, y, z, fx, fy, fz, dij, Rz, pbc )
-        call position( x, y, z, fx, fy, fz, pbc )
+        if (with_ih) then
+            call position_ih( x, y, z, fx, fy, fz, dij, Rz, pbc )
+        else
+            call position( x, y, z, fx, fy, fz, pbc )
+        end if
+        ! Siempre se calcula la energía de la misma forma
         call force( x, y, z, fx, fy, fz, enerpot )
-        ! call IH( x, y, z, np, dij, Rz )
+        if (with_ih) call ih( x, y, z, np, dij, Rz )
+
         if ( mod(i, 100000) == 0 ) then
             print*, i, enerpot/np, 'Average'
         end if
@@ -129,24 +145,24 @@ program principal
                 cfy(nprom, j) = y(j)
                 cfz(nprom, j) = z(j)
             end do
-            call gr( x,y,z,g,dr,1 ) ! Siempre con PBC
+            ! call gr( x,y,z,g,dr,1 ) ! Siempre con PBC
         end if
     end do
 
-    open(newunit=u, file='gr_BD.dat', status='unknown')
-    write(u,'(3f16.8)') r(1), g(1)
+    ! open(newunit=u, file='gr_BD.dat', status='unknown')
+    ! write(u,'(3f16.8)') r(1), g(1)
 
-    do i=2,mr
-        r(i)=(i-1)*dr
-        dv=4._dp*pi*r(i)**2.0_dp*dr
-        fnorm=boxl**3._dp/( np**2.0_dp * nprom*dv )
-        graux=g(i)*fnorm
-        hraux=graux-1._dp
-        g(i)=graux
-        h(i)=hraux
-        write(u,'(3f16.8)')r(i),graux,hraux
-    end do
-    close(u)
+    ! do i=2,mr
+    !     r(i)=(i-1)*dr
+    !     dv=4._dp*pi*r(i)**2.0_dp*dr
+    !     fnorm=boxl**3._dp/( np**2.0_dp * nprom*dv )
+    !     graux=g(i)*fnorm
+    !     hraux=graux-1._dp
+    !     g(i)=graux
+    !     h(i)=hraux
+    !     write(u,'(3f16.8)')r(i),graux,hraux
+    ! end do
+    ! close(u)
 
     
     call difusion( nprom,cfx,cfy,cfz,t,wt,ft )

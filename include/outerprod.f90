@@ -2,7 +2,6 @@ module outerprod
     use types
 
     implicit none
-    private
     public outerprod_d
 
 contains

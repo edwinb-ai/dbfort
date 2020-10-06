@@ -3,7 +3,7 @@ use types
 
 implicit none
 private
-public :: gasdev
+public gasdev
 
 contains
 
