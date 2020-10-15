@@ -10,6 +10,7 @@ contains
         real(dp), intent(inout) :: g(:)
         real(dp), intent(in) :: dr
         integer, intent(in) :: pbc
+        real(dp) :: dnrm2
         
         ! Local variables
         integer :: i, j, nbin
@@ -28,7 +29,9 @@ contains
                     zij = zij-boxl*idnint(zij/boxl)
                 end if
 
-                rij = norm2( [xij,yij,zij] )
+                ! rij = norm2( [xij,yij,zij] )
+                ! Mejor rendimiento con LAPACK
+                rij = dnrm2( 3,[xij, yij, zij],1 )
                 if (rij < rc) then
                     nbin = nint(rij/dr) + 1
                     if (nbin <= mr) then

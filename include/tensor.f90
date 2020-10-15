@@ -1,7 +1,7 @@
 module tensor
 use types
 use outerprod
-use utils, only: unit_matrix
+use utils, only: unit_matrix, cholesky
 use randomm, only: gasdev
 
 implicit none
@@ -15,6 +15,8 @@ contains
         integer, parameter :: n = 3 !la dimension de la matriz (x,y,z)
         integer, intent(in) :: k   ! numero de submatrices (particulas)
         real(dp), intent(in) :: x(:), y(:), z(:)
+        real(dp), intent(out) :: R(n*k)
+        real(dp), intent(out) :: mat_a(n*k, n*k)
 
         ! Variables locales
         real(dp) :: datos(n, k)
@@ -24,12 +26,10 @@ contains
         real(dp) :: ident(n, n)
 
         real(dp) :: Xr(n*k)
-        real(dp), intent(out) :: R(n*k)
+        
 
         integer :: ix, ij, pos, il   ! indices
-        integer :: info
-
-        real(dp), intent(out) :: mat_a(n*k, n*k)
+        ! integer :: info
         real(dp) :: sigma(n*k, n*k)
 
         ! Concatenarlos para construir la matriz
@@ -69,9 +69,11 @@ contains
 
         sigma = mat_a + 0.00001_dp
         ! Descomposición de Cholesky
-        call dpotrf( 'L',n*k,sigma,n*k,info )
+        ! call dpotrf( 'L',n*k,sigma,n*k,info )
+        ! if ( info /= 0 ) print*, "No se puede descomponer"
+        call cholesky( sigma, mat_a )
         ! Multiplicar L*Xr para obtener el vector de números aleatorios
-        ! R = matmul( sigma, Xr )
+        ! R = matmul( mat_a, Xr )
         call dgemv( 'n',n*k,n*k,1.0_dp,sigma,n*k,Xr,1,0.0_dp,R,1 )
     end subroutine ih
 
@@ -92,14 +94,15 @@ contains
         xij = part1(1) - part2(1)
         yij = part1(2) - part2(2)
         zij = part1(3) - part2(3)
-        rij = xij**2 + yij**2 + zij**2
+        ! rij = xij**2 + yij**2 + zij**2
         temp = [xij, yij, zij]
+        sqrddist = norm2(temp)
+        rij = sqrddist ** 2
 
         ! calculando Dij
         Dij = 0.0_dp
         prodout = 0.0_dp
 
-        sqrddist = sqrt( rij )
         call unit_matrix( ident )
 
         if (sqrddist >= 1.0_dp) then

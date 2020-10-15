@@ -32,9 +32,8 @@ module positions
             do j = 1, np-1
                 ij = (k*j) - k + 1
                 call dgemv( 'n',k,k,1.0_dp,dij(i:i+2,ij:ij+2),&
-                    k,fuerzas(:, j),1,0._dp,mulout,1 )
-                ! temp(i:i+2) = temp(i:i+2) + &
-                !     matmul( dij(i:i+2,ij:ij+2), fuerzas(:, j) )
+                    k,fuerzas(:, j),1,0.0_dp,mulout,1 )
+                ! mulout = matmul( dij(i:i+2,ij:ij+2), fuerzas(:, j) )
                 temp(i:i+2) = temp(i:i+2) + mulout
             end do
         end do

@@ -22,5 +22,5 @@ module box_pot_parameters
 
     ! mp and mr arguments
     integer, parameter :: mp = 1024, mr = 2**9
-    integer, parameter :: mt = 30000
+    integer, parameter :: mt = 300000
 end module box_pot_parameters

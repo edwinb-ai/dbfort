@@ -18,6 +18,7 @@ contains
         integer :: i, j
         real(dp) :: rij, xij, yij, zij, uij
         real(dp) :: fij, fxij, fyij, fzij
+        real(dp) :: dnrm2
 
         ! Inicializar arreglos y variables
         ener = 0.0_dp
@@ -41,7 +42,9 @@ contains
                 yij = yij-boxl*idnint(yij/boxl)
                 zij = zij-boxl*idnint(zij/boxl)
                 
-                rij = norm2( [xij, yij, zij] )
+                ! rij = norm2( [xij, yij, zij] )
+                ! Mejor rendimiento con LAPACK
+                rij = dnrm2( 3,[xij, yij, zij],1 )
                 
                 if (rij < rc) then
                     call hardsphere( rij,uij,xij,yij,zij,fxij,fyij,fzij )

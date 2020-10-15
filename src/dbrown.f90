@@ -111,7 +111,7 @@ program principal
     wt = 0.0_dp
     ft = 0.0_dp
 
-    ncep = 100
+    ncep = 10
     ncp = 3000000
     nprom = 0
     pbc = 0
@@ -174,10 +174,12 @@ program principal
 
     close(u)
 
-    ! print*, "Saving MSD to files..."
-    ! call save_timeseries( 'msd_data/msd_',cfx,cfy,cfz )
-    deallocate( cfx,cfy,cfz,x,y,z,fx,fy,fz )
-    deallocate( dij,Rz )
+    print*, "Saving MSD to files..."
+    call save_timeseries( 'msd_data/msd_',cfx,cfy,cfz )
     ! print*, "Done!"
+
+    ! Desalojar toda la memoria utilizada
+    deallocate( cfx,cfy,cfz,x,y,z )
+    deallocate( fx,fy,fz,dij,Rz )
 
 end program principal
