@@ -54,6 +54,8 @@ module positions
     subroutine position(x, y, z, fx, fy, fz, pbc)
         use randomm, only: gasdev
 
+        implicit none
+
         real(dp), intent(in) :: fx(:), fy(:), fz(:)
         real(dp), intent(inout) :: x(:), y(:), z(:)
         integer, intent(in):: pbc

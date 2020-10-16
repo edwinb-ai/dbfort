@@ -61,7 +61,7 @@ subroutine cholesky(mat_a, sigma)
     sigma = 0.0_dp
 
     do j = 1, m
-        sigma(j, j) = sqrt( mat_a(j, j) - dot_product(sigma(j,1:j-1),sigma(j,1:j-1)) )
+        sigma(j, j) = dsqrt( mat_a(j, j) - dot_product(sigma(j,1:j-1),sigma(j,1:j-1)) )
         if ( sigma(j, j) <= 0.000001_dp ) then
             print*, 'Numerical instability'
             print*, sigma(j, j)
@@ -141,7 +141,7 @@ subroutine save_timeseries(filename,x,y,z)
     character(len=1024) :: newname
     character(len=8) :: fmt
     character(len=8) :: x1
-    integer :: i, j, n, m
+    integer :: i, j, n, m, u
 
     n = size(x,1)
     m = size(x,2)
@@ -151,11 +151,11 @@ subroutine save_timeseries(filename,x,y,z)
     do i = 1, m
         write(x1,fmt) i
         newname = filename//trim(adjustl(x1))//'.dat'
-        open(60, file=newname, status="new")
+        open(newunit=u, file=newname, status="new")
         do j = 1, n
-            write(60,'(f13.8,A,f13.8,A,f13.8)') x(j, i),',',y(j, i),',',z(j, i)
+            write(u,'(f13.8,A,f13.8,A,f13.8)') x(j, i),',',y(j, i),',',z(j, i)
         end do
-        close(60)
+        close(u)
     end do
 
 end subroutine save_timeseries

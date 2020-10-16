@@ -10,10 +10,10 @@ module box_pot_parameters
     real(dp), parameter :: bpot = (dlr/dla)**(1.0_dp/(dlr-dla))
 
     ! parameters arguments
-    real(dp), parameter :: pi = 4.0_dp*atan(1.0_dp)
+    real(dp), parameter :: pi = 4.0_dp*datan(1.0_dp)
     
     real(dp), parameter :: diam = 1.0_dp
-    real(dp), parameter :: sqtwodt = sqrt(2.0_dp*deltat)
+    real(dp), parameter :: sqtwodt = dsqrt(2.0_dp*deltat)
 
     ! Dependen del usuario
     real(dp) :: phi, rho, boxl, rc

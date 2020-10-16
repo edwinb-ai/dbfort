@@ -33,7 +33,7 @@ contains
                 ! Mejor rendimiento con LAPACK
                 rij = dnrm2( 3,[xij, yij, zij],1 )
                 if (rij < rc) then
-                    nbin = nint(rij/dr) + 1
+                    nbin = idnint(rij/dr) + 1
                     if (nbin <= mr) then
                         g(nbin) = g(nbin) + 2.0_dp
                     end if
@@ -64,8 +64,8 @@ contains
                     dz = cfz(j+i,k)-cfz(j,k)
                     aux = dx*dx + dy*dy + dz*dz
                     dif2 = dif2 + aux
-                    aux2 = dk*sqrt(aux)
-                    aux = sin(aux2)/aux2
+                    aux2 = dk*dsqrt(aux)
+                    aux = dsin(aux2)/aux2
                     dself = dself+aux
                 end do
             end do

@@ -47,7 +47,12 @@ program principal
     print*, 'The length of the box is: ', boxl
     print*, 'The mean interparticle distance is: ', d
     print*, 'Cut radius: ', rc
-    if (with_ih) print*, 'With hydrodynamic interactions'
+    
+    if (with_ih) then
+        print*, 'With hydrodynamic interactions'
+    else
+        print*, 'Without hydrodynamic interactions'
+    end if
 
     ! Inicializar la memoria de los arreglos
     allocate( x(np), y(np), z(np), fx(np), fy(np), fz(np) )
@@ -80,11 +85,8 @@ program principal
     !Periodic boundary conditions; pbc > 0
     open(newunit=u, file = 'energy_BD.dat', status = 'unknown')
     do istep = 1, limT
-        ! call position_ih( x, y, z, fx, fy, fz, dij, Rz, pbc )
         call position( x, y, z, fx, fy, fz, pbc )
         call force( x, y, z, fx, fy, fz, enerpot )
-        ! call check_nan(fz, np)
-        ! call IH( x, y, z, np, dij, Rz )
         epotn = enerpot/real(np)
         if (mod(istep, 100000) == 0) then
             print*, istep, epotn, 'Thermal'
@@ -176,7 +178,7 @@ program principal
 
     print*, "Saving MSD to files..."
     call save_timeseries( 'msd_data/msd_',cfx,cfy,cfz )
-    ! print*, "Done!"
+    print*, "Done!"
 
     ! Desalojar toda la memoria utilizada
     deallocate( cfx,cfy,cfz,x,y,z )

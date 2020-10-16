@@ -24,7 +24,6 @@ contains
         real(dp) :: part1(n)
         real(dp) :: part2(n)
         real(dp) :: ident(n, n)
-
         real(dp) :: Xr(n*k)
         
 

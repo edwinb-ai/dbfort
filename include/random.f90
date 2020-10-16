@@ -25,7 +25,7 @@ contains
                 rsq = v1**2+v2**2
                 if (rsq > 0.0_dp .and. rsq < 1.0_dp) exit
             end do
-            fac = sqrt(-2.0_dp*log(rsq)/rsq)
+            fac = dsqrt(-2.0_dp*log(rsq)/rsq)
             gasdev = v1 * fac
             gset = v2 * fac
             available = .true.
