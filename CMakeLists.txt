@@ -7,9 +7,9 @@ enable_language(Fortran)
 
 if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU)
     # Banderas para producción
-    set(dialect "-ffree-form -std=f2008 -fimplicit-none -fPIC -Ofast -march=native -funroll-loops")
+    set(dialect "-ffree-form -std=f2008 -fPIC -O3 -fimplicit-none -march=native -funroll-loops")
     # Banderas para hacer debugging
-    # set(dialect "-Wall -Wextra -Wimplicit-interface -fPIC -fmax-errors=1 -g -fcheck=all -fbacktrace")
+    # set(dialect "-Wall -Wextra -Wimplicit-interface -fmax-errors=1 -g -fcheck=all -fbacktrace")
     set(bounds "-fbounds-check")
 endif()
 if(CMAKE_Fortran_COMPILER_ID STREQUAL Intel)

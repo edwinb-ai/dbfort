@@ -1,6 +1,7 @@
 module positions
     use types
     use box_pot_parameters, only: np, sqtwodt, boxl, deltat
+    use randomm
 
     implicit none
     private
@@ -52,20 +53,20 @@ module positions
     end subroutine position_ih
 
     subroutine position(x, y, z, fx, fy, fz, pbc)
-        use randomm, only: gasdev
-
-        implicit none
-
         real(dp), intent(in) :: fx(:), fy(:), fz(:)
         real(dp), intent(inout) :: x(:), y(:), z(:)
         integer, intent(in):: pbc
         ! Local variables
         integer :: i
+        real(dp) :: randnorm(3*np)
+
+        call normal(randnorm)
+        randnorm = randnorm * sqtwodt
 
         do i = 1, np
-            x(i) = x(i) + (fx(i)*deltat) + (sqtwodt*gasdev())
-            y(i) = y(i) + (fy(i)*deltat) + (sqtwodt*gasdev())
-            z(i) = z(i) + (fz(i)*deltat) + (sqtwodt*gasdev())
+            x(i) = x(i) + (fx(i)*deltat) + randnorm(i)
+            y(i) = y(i) + (fy(i)*deltat) + randnorm(np + i)
+            z(i) = z(i) + (fz(i)*deltat) + randnorm((2*np) + i)
             if (pbc == 1) then
                 x(i) = x(i) - boxl*idnint(x(i)/boxl)
                 y(i) = y(i) - boxl*idnint(y(i)/boxl)

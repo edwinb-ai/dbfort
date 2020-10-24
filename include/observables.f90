@@ -43,10 +43,9 @@ contains
     end subroutine gr
 
     ! This sobroutine computes the mean-square displacement
-    subroutine difusion(nprom, cfx, cfy, cfz, t, wt, ft)
+    subroutine difusion(nprom, cfx, cfy, cfz, wt, ft)
         real(dp), intent(in) :: cfx(:,:), cfy(:,:), cfz(:,:)
         real(dp), intent(inout) :: wt(:), ft(:)
-        real(dp), intent(in) :: t(:)
         integer, intent(in):: nprom
         ! Local variables
         integer :: i, j, k
@@ -75,5 +74,6 @@ contains
             wt(i) = wt(i)+dif2
             ft(i) = ft(i)+dself
         end do
+        return
     end subroutine difusion
 end module observables
