@@ -9,7 +9,7 @@ contains
         real(dp), intent(in) ::  x(:), y(:), z(:)
         real(dp), intent(inout) :: g(:)
         real(dp), intent(in) :: dr
-        integer, intent(in) :: pbc
+        logical, intent(in) :: pbc
         real(dp) :: dnrm2
         
         ! Local variables
@@ -23,7 +23,7 @@ contains
                 yij = y(i)-y(j)
                 zij = z(i)-z(j)
 
-                if ( pbc == 1 ) then
+                if (pbc) then
                     xij = xij-boxl*idnint(xij/boxl)
                     yij = yij-boxl*idnint(yij/boxl)
                     zij = zij-boxl*idnint(zij/boxl)
@@ -57,7 +57,7 @@ contains
             dif2 = 0.0_dp
             dself = 0.0_dp
             do j = 1, nprom-i
-                do k = 1,np
+                do k = 1, np
                     dx = cfx(j+i,k)-cfx(j,k)
                     dy = cfy(j+i,k)-cfy(j,k)
                     dz = cfz(j+i,k)-cfz(j,k)
@@ -74,6 +74,5 @@ contains
             wt(i) = wt(i)+dif2
             ft(i) = ft(i)+dself
         end do
-        return
     end subroutine difusion
 end module observables

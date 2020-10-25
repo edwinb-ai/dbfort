@@ -4,8 +4,8 @@ module box_pot_parameters
     public
 ! CONSTANT PARAMETERS
     ! pot arguments
-    real(dp), parameter :: dlr = 50._dp, dT = 1.4737_dp
-    real(dp), parameter :: dla = 49._dp, deltat = 0.00001_dp
+    real(dp), parameter :: dlr = 50.0_dp, dT = 1.4737_dp
+    real(dp), parameter :: dla = 49.0_dp, deltat = 0.00001_dp
     real(dp), parameter :: a2 = (dlr/(dlr-dla))*(dlr/dla)**(dla/(dlr-dla))
     real(dp), parameter :: bpot = (dlr/dla)**(1.0_dp/(dlr-dla))
 

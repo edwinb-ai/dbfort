@@ -27,14 +27,14 @@ real(dp), allocatable :: Rz(:)
 integer :: i, istep, nprom, j, ncep, ncp
 real(dp) :: ener, enerpot, epotn, dv, fnorm
 ! real(dp) :: graux, hraux
-integer :: pbc = 1
+logical :: pbc = .true.
+integer :: u
 
 integer, parameter :: limT = 300000
 
 ! Leer de un archivo de entrada los valores del usuario
-integer :: u
 open(newunit=u, file = 'entrada.in', status = 'old')
-read(u, *) phi, np, with_ih
+read(u, *) phi, np, with_ih, ncp, ncep
 close(u)
 ! Actualizar los parámetros de simulación
 rho = 6.0_dp * real(phi) / pi
@@ -90,7 +90,7 @@ do istep = 1, limT
         print*, istep, epotn, 'Thermal'
     end if
     if (mod(istep, 10000) == 0) then 
-        write(u,'(3f16.8)') real(istep), epotn
+        write(u,'(2f16.8)') real(istep), epotn
     end if
 end do
 close(u)
@@ -108,11 +108,11 @@ close(u)
 g = 0.0_dp
 h = 0.0_dp
 
-ncep = 10
-ncp = 200000
+! ncep = 10
+! ncp = 200000
 mt = ncp / ncep
 nprom = 0
-pbc = 0
+pbc = .false.
 
 allocate( cfx(mt,np),cfy(mt,np),cfz(mt,np) )
 allocate( t(mt), wt(mt), ft(mt) )
@@ -168,12 +168,11 @@ end do
 
 
 call difusion( nprom,cfx,cfy,cfz,wt,ft )
+
 open(newunit=u,file='wt_fself.dat',status='unknown')
-
-do i=1,mt-1
-    write(u,"(3f16.11)") t(i+1),wt(i),ft(i)
+do i=1,nprom-1
+    write(u,'(f10.8,A,f10.8,A,f11.8)') t(i+1),',',wt(i),',',ft(i)
 end do
-
 close(u)
 
 print*, "Saving MSD to files..."

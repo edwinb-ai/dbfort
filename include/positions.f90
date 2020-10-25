@@ -15,7 +15,7 @@ module positions
         real(dp), intent(inout) :: x(:), y(:), z(:)
         real(dp), intent(in) :: dij(:,:)
         real(dp), intent(in) :: Rz(:)
-        integer, intent(in):: pbc
+        logical, intent(in):: pbc
         ! Local variables
         integer :: i, j, ij
         integer, parameter :: k = 3 ! Dimensión espacial del sistema
@@ -44,7 +44,7 @@ module positions
             x(i) = x(i) + temp(ij)*deltat + sqtwodt*Rz(ij)
             y(i) = y(i) + temp(ij+1)*deltat + sqtwodt*Rz(ij+1)
             z(i) = z(i) + temp(ij+2)*deltat + sqtwodt*Rz(ij+2)
-            if (pbc == 1) then
+            if (pbc) then
                 x(i) = x(i) - boxl*idnint(x(i)/boxl)
                 y(i) = y(i) - boxl*idnint(y(i)/boxl)
                 z(i) = z(i) - boxl*idnint(z(i)/boxl)
@@ -55,19 +55,15 @@ module positions
     subroutine position(x, y, z, fx, fy, fz, pbc)
         real(dp), intent(in) :: fx(:), fy(:), fz(:)
         real(dp), intent(inout) :: x(:), y(:), z(:)
-        integer, intent(in):: pbc
+        logical, intent(in):: pbc
         ! Local variables
         integer :: i
-        real(dp) :: randnorm(3*np)
-
-        call normal(randnorm)
-        randnorm = randnorm * sqtwodt
 
         do i = 1, np
-            x(i) = x(i) + (fx(i)*deltat) + randnorm(i)
-            y(i) = y(i) + (fy(i)*deltat) + randnorm(np + i)
-            z(i) = z(i) + (fz(i)*deltat) + randnorm((2*np) + i)
-            if (pbc == 1) then
+            x(i) = x(i) + (fx(i)*deltat) + (gasdev()*sqtwodt)
+            y(i) = y(i) + (fy(i)*deltat) + (gasdev()*sqtwodt)
+            z(i) = z(i) + (fz(i)*deltat) + (gasdev()*sqtwodt)
+            if (pbc) then
                 x(i) = x(i) - boxl*idnint(x(i)/boxl)
                 y(i) = y(i) - boxl*idnint(y(i)/boxl)
                 z(i) = z(i) - boxl*idnint(z(i)/boxl)

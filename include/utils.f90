@@ -153,7 +153,7 @@ subroutine save_timeseries(filename,x,y,z)
         newname = filename//trim(adjustl(x1))//'.dat'
         open(newunit=u, file=newname, status="new")
         do j = 1, n
-            write(u,'(f13.8,A,f13.8,A,f13.8)') x(j, i),',',y(j, i),',',z(j, i)
+            write(u,'(f11.8,A,f12.8,A,f12.8)') x(j, i),',',y(j, i),',',z(j, i)
         end do
         close(u)
     end do
