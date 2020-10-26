@@ -171,7 +171,7 @@ call difusion( nprom,cfx,cfy,cfz,wt,ft )
 
 open(newunit=u,file='wt_fself.dat',status='unknown')
 do i=1,nprom-1
-    write(u,'(f10.8,A,f10.8,A,f11.8)') t(i+1),',',wt(i),',',ft(i)
+    write(u,'(f12.8,A,f12.8,A,f11.8)') t(i+1),',',wt(i),',',ft(i)
 end do
 close(u)
 
