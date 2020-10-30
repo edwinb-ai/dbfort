@@ -3,7 +3,7 @@ module observables
     use box_pot_parameters
     implicit none
     save
-    public gr, difusion
+    public gr, normalize, difusion
 contains
     subroutine gr(x,y,z,g,dr,pbc)
         real(dp), intent(in) ::  x(:), y(:), z(:)
@@ -41,6 +41,33 @@ contains
             end do
         end do
     end subroutine gr
+
+    subroutine normalize(g,h,r,dr,nprom,filename)
+        ! Variables de entrada/salida
+        real(dp), intent(inout) :: g(:), h(:), r(:)
+        real(dp), intent(in) :: dr
+        character(len=*), intent(in) :: filename
+        integer, intent(in) :: nprom
+
+        ! Variables locales
+        integer :: u, i
+        real(dp) :: dv, fnorm, graux, hraux
+
+        open(newunit=u, file='gr_BD.dat', status='unknown')
+        write(u,'(3f16.8)') r(1), g(1)
+
+        do i=2,mr
+            r(i)=(i-1)*dr
+            dv=4.0_dp*pi*r(i)*r(i)*dr
+            fnorm=boxl**3.0_dp/( np**2.0_dp * nprom*dv )
+            graux=g(i)*fnorm
+            hraux=graux-1.0_dp
+            g(i)=graux
+            h(i)=hraux
+            write(u,'(3f16.8)')r(i),graux,hraux
+        end do
+        close(u)
+    end subroutine normalize
 
     ! This sobroutine computes the mean-square displacement
     subroutine difusion(nprom, cfx, cfy, cfz, wt, ft)

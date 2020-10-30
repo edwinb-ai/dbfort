@@ -2,7 +2,7 @@ program principal
 use types
 use box_pot_parameters
 use tensor, only: ih
-use utils, only: save_timeseries, iniconfig, show_m
+use utils, only: save_timeseries, save_msd, iniconfig, show_m
 use positions, only: position, position_ih
 use energies
 use observables
@@ -30,7 +30,7 @@ real(dp) :: ener, enerpot, epotn, dv, fnorm
 logical :: pbc = .true.
 integer :: u
 
-integer, parameter :: limT = 300000
+integer, parameter :: limT = 1000000
 
 ! Leer de un archivo de entrada los valores del usuario
 open(newunit=u, file = 'entrada.in', status = 'old')
@@ -147,33 +147,12 @@ do i = 1, ncp
         cfx(nprom, :) = x
         cfy(nprom, :) = y
         cfz(nprom, :) = z
-        ! call gr( x,y,z,g,dr,1 ) ! Siempre con PBC
     end if
 end do
 
-! open(newunit=u, file='gr_BD.dat', status='unknown')
-! write(u,'(3f16.8)') r(1), g(1)
-
-! do i=2,mr
-!     r(i)=(i-1)*dr
-!     dv=4._dp*pi*r(i)**2.0_dp*dr
-!     fnorm=boxl**3._dp/( np**2.0_dp * nprom*dv )
-!     graux=g(i)*fnorm
-!     hraux=graux-1._dp
-!     g(i)=graux
-!     h(i)=hraux
-!     write(u,'(3f16.8)')r(i),graux,hraux
-! end do
-! close(u)
-
-
 call difusion( nprom,cfx,cfy,cfz,wt,ft )
 
-open(newunit=u,file='wt_fself.dat',status='unknown')
-do i=1,nprom-1
-    write(u,'(f12.8,A,f12.8,A,f11.8)') t(i+1),',',wt(i),',',ft(i)
-end do
-close(u)
+call save_msd(t, wt, ft, nprom, 'wt_fself.dat')
 
 print*, "Saving MSD to files..."
 call save_timeseries( 'msd_data/msd_',cfx,cfy,cfz )

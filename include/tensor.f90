@@ -28,7 +28,7 @@ contains
         
 
         integer :: ix, ij, pos, il   ! indices
-        ! integer :: info
+        integer :: info
         real(dp) :: sigma(n*k, n*k)
 
         ! Concatenarlos para construir la matriz
@@ -68,9 +68,9 @@ contains
 
         sigma = mat_a + 0.00001_dp
         ! Descomposición de Cholesky
-        ! call dpotrf( 'L',n*k,sigma,n*k,info )
-        ! if ( info /= 0 ) print*, "No se puede descomponer"
-        call cholesky( sigma, mat_a )
+        call dpotrf( 'L',n*k,sigma,n*k,info )
+        if ( info /= 0 ) print*, "No se puede descomponer"
+        ! call cholesky( sigma, mat_a )
         ! Multiplicar L*Xr para obtener el vector de números aleatorios
         ! R = matmul( mat_a, Xr )
         call dgemv( 'n',n*k,n*k,1.0_dp,sigma,n*k,Xr,1,0.0_dp,R,1 )

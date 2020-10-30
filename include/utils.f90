@@ -3,7 +3,8 @@ module utils
     use box_pot_parameters
     implicit none
     private
-    public unit_matrix, cholesky, check_nan, save_timeseries, iniconfig, show_m
+    public unit_matrix, cholesky, check_nan, save_timeseries, &
+            iniconfig, show_m, save_msd
 
 contains
 
@@ -159,5 +160,21 @@ subroutine save_timeseries(filename,x,y,z)
     end do
 
 end subroutine save_timeseries
+
+subroutine save_msd(t, wt, ft, nprom, filename)
+    ! Variables de entrada/salida
+    real(dp), intent(in) :: t(:), wt(:), ft(:)
+    character(len=*), intent(in) :: filename
+    integer, intent(in) :: nprom
+
+    ! Variables locales
+    integer :: u, i
+
+    open(newunit=u, file=filename, status='unknown')
+    do i=1,nprom-1
+        write(u,'(f15.11,A,f15.11,A,f14.11)') t(i+1),',',wt(i),',',ft(i)
+    end do
+    close(u)
+end subroutine save_msd
 
 end module utils
