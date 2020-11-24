@@ -44,9 +44,7 @@ subroutine unit_matrix(mat) ! matrix dimension
 
     mat = 0.0_dp
 
-    do i=1, n
-        mat(i, i) = 1.0_dp
-    end do
+    forall ( i = 1:n ) mat(i, i) = 1.0_dp
 
 end subroutine unit_matrix
 

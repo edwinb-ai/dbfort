@@ -4,7 +4,7 @@ module energies
 
     implicit none
     
-    save
+    private
     public force
 
 contains
@@ -18,7 +18,7 @@ contains
         integer :: i, j
         real(dp) :: rij, xij, yij, zij, uij
         real(dp) :: fij, fxij, fyij, fzij
-        real(dp) :: dnrm2
+        real(dp) :: dnrm2 ! Norma euclidiana de BLAS
 
         ! Inicializar arreglos y variables
         ener = 0.0_dp
@@ -43,7 +43,7 @@ contains
                 zij = zij-boxl*idnint(zij/boxl)
                 
                 ! rij = norm2( [xij, yij, zij] )
-                ! Mejor rendimiento con LAPACK
+                ! Mejor rendimiento con BLAS
                 rij = dnrm2( 3,[xij, yij, zij],1 )
                 
                 if (rij < rc) then

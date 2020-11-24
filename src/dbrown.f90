@@ -10,27 +10,24 @@ use observables
 implicit none
 
 ! Variables locales
-real(dp), allocatable :: x(:), y(:), z(:)
+real(dp), allocatable :: x(:), y(:), z(:), r(:), g(:), h(:)
 real(dp), allocatable :: fx(:), fy(:), fz(:)
-real(dp) :: r(mr), g(mr), h(mr)
 real(dp), allocatable :: t(:), wt(:), ft(:)
 ! Deben ser `allocatable` dado que son arreglos grandes
 real(dp), allocatable :: cfx(:,:), cfy(:,:), cfz(:,:)
 
-real(dp) :: dr, dq
-real(dp) :: d
+real(dp) :: dr, dq, d
 integer, parameter :: k = 3
 
 real(dp), allocatable :: dij(:, :)
 real(dp), allocatable :: Rz(:)
 
-integer :: i, istep, nprom, j, ncep, ncp
+integer :: i, istep, nprom, j, ncep, ncp, s
 real(dp) :: ener, enerpot, epotn, dv, fnorm
-! real(dp) :: graux, hraux
 logical :: pbc = .true.
 integer :: u
 
-integer, parameter :: limT = 1000000
+integer, parameter :: limT = 3000000
 
 ! Leer de un archivo de entrada los valores del usuario
 open(newunit=u, file = 'entrada.in', status = 'old')
@@ -56,8 +53,9 @@ end if
 
 ! Inicializar la memoria de los arreglos
 allocate( x(np), y(np), z(np), fx(np), fy(np), fz(np) )
-allocate( dij(np*k, np*k) )
-allocate( Rz(np*k) )
+allocate( r(mr), g(mr), h(mr) )
+s = np*k
+allocate( dij(s, s), Rz(s) )
 
 ! Crear la configuración inicial de malla
 call iniconfig(x, y, z, d)
@@ -86,7 +84,7 @@ do istep = 1, limT
     call position( x, y, z, fx, fy, fz, pbc )
     call force( x, y, z, fx, fy, fz, enerpot )
     epotn = enerpot/real(np)
-    if (mod(istep, 100000) == 0) then
+    if (mod(istep, 200000) == 0) then
         print*, istep, epotn, 'Thermal'
     end if
     if (mod(istep, 10000) == 0) then 
@@ -97,12 +95,12 @@ close(u)
 
 print*, 'The system has thermalized'
 
+! Termina la termalización y se guarda la configuración final
 open(newunit=u, file = 'finalconBD.dat', status = 'unknown')
 do i = 1,np
-    write(u,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
+    write(u,'(3f16.8)') x(i), y(i), z(i)
 end do
 close(u)
-!Thermalization ends
 
 ! Aquí se inicializan los arreglos para el cálculo de las observables
 g = 0.0_dp
@@ -159,7 +157,7 @@ call save_timeseries( 'msd_data/msd_',cfx,cfy,cfz )
 print*, "Done!"
 
 ! Desalojar toda la memoria utilizada
-deallocate( cfx,cfy,cfz,x,y,z )
+deallocate( cfx,cfy,cfz,x,y,z,r,g,h )
 deallocate( fx,fy,fz,dij,Rz )
 
 end program principal

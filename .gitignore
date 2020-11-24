@@ -1,8 +1,10 @@
 # Archivos de configuración
 .vscode/
+*.code-workspace
 
 # Se ignoran los datos generados
 data/
+p*/
 
 # Directorios de compilación
 build/
