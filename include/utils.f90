@@ -52,29 +52,30 @@ subroutine cholesky(mat_a, sigma)
     real(dp), intent(in) :: mat_a(:,:)
     real(dp), intent(out):: sigma(:,:)
 
-    !Local variable
-    integer :: i, j, m
+    ! Variables locales
+    real(dp) :: ddot
+    integer :: i, j, m, n
 
     m = size(mat_a, 1)
 
     sigma = 0.0_dp
 
     do j = 1, m
-        sigma(j, j) = dsqrt( mat_a(j, j) - dot_product(sigma(j,1:j-1),sigma(j,1:j-1)) )
+        n = size(sigma(j,1:j-1), 1)
+        sigma(j, j) = dsqrt( mat_a(j, j) - ddot( n,sigma(j,1:j-1),1,sigma(j,1:j-1),1 ) )
         if ( sigma(j, j) <= 0.000001_dp ) then
             print*, 'Numerical instability'
             print*, sigma(j, j)
             stop
         end if
         do i = j+1, m
-            sigma(i, j)  = (mat_a(i, j) - dot_product(sigma(i, 1: j-1), &
-                        sigma(j, 1: j-1)) ) / sigma(j, j)
+            n = size(sigma(j,1:j-1), 1)
+            sigma(i, j) = mat_a(i,j)-ddot( n,sigma(i,1:j-1),1,sigma(j,1:j-1),1 )
+            sigma(i,j) = sigma(i,j) / sigma(j,j)
+        end do
     end do
-    end do
-
 end subroutine cholesky
 
-!! gasdev : Returns a normally distributed deviate with zero mean and unit variance from Numerical recipes
 subroutine show_m(A)
     real(dp), intent(in) :: A(:,:)
     integer :: ix, n

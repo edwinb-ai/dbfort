@@ -27,7 +27,7 @@ real(dp) :: ener, enerpot, epotn, dv, fnorm
 logical :: pbc = .true.
 integer :: u
 
-integer, parameter :: limT = 3000000
+integer, parameter :: limT = 300000
 
 ! Leer de un archivo de entrada los valores del usuario
 open(newunit=u, file = 'entrada.in', status = 'old')
@@ -58,13 +58,13 @@ s = np*k
 allocate( dij(s, s), Rz(s) )
 
 ! Crear la configuración inicial de malla
-call iniconfig(x, y, z, d)
+! call iniconfig(x, y, z, d)
 
-! open(newunit=u, file = 'finalconBD.dat', status = 'unknown')
-! do i = 1,np
-!     read(u,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
-! end do
-! close(u)
+open(newunit=u, file = 'finalconBD.dat', status = 'unknown')
+do i = 1,np
+    read(u,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
+end do
+close(u)
 
 ! Cálculo inicial de interacciones hidrodinámicas, inicializar arreglos
 dij = 0.0_dp

@@ -7,6 +7,7 @@ public gasdev
 
 contains
 
+!! gasdev : Returns a normally distributed deviate with zero mean and unit variance from Numerical recipes
 real(dp) function gasdev()
     real(dp) :: v1, v2, fac, rsq
     real(dp), save :: gset

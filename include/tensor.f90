@@ -26,11 +26,8 @@ contains
         real(dp) :: part2(n)
         real(dp) :: ident(n, n)
         real(dp), allocatable :: Xr(:)
-        character(1), parameter :: uplo = 'L' ! El tipo de descomposición
-
         integer :: ix, ij, pos, il   ! indices
-        integer :: info
-        real(dp), allocatable :: sigma(:,:), temp(:,:)
+        real(dp), allocatable :: sigma(:,:)
 
         ! Concatenarlos para construir la matriz
         datos(1, :) = x
@@ -39,14 +36,13 @@ contains
 
         ! Tamaño total de elementos, partícula por cada dimensión espacial
         s = n*k
-        allocate( sigma(s,s), temp(s,s), Xr(s) )
+        allocate( sigma(s,s), Xr(s) )
 
         ! Inicialización de los arreglos
         call unit_matrix( ident )
         R = 0.0_dp
         Xr = 0.0_dp
         mat_a = 0.0_dp
-        temp = 0.0_dp
         Dij = 0.0_dp
 
         ! Distribucion normal estándar
@@ -75,20 +71,12 @@ contains
         end do
 
         sigma = mat_a + 0.00001_dp
-        ! Descomposición de Cholesky
-        call dpotrf( uplo,s,sigma,s,info )
-        if ( info .ne. 0 ) print*, "No se puede descomponer"
-        ! Copiar la descomposición a una matriz nueva
-        call dlacpy( uplo, s, s, sigma, s, temp, s )
-        ! call cholesky( sigma, mat_a )
-        ! Multiplicar L*Xr para obtener el vector de números aleatorios
-        ! R = matmul( mat_a, Xr )
-        call dgemv( 'n',s,s,1.0_dp,temp,s,Xr,1,0.0_dp,R,1 )
+        ! call cholesky_method( sigma,s,Xr,R )
+        call krylov_method( sigma,s,Xr,R )
 
         ! Liberar memoria
-        deallocate( sigma,temp,Xr )
+        deallocate( sigma,Xr )
     end subroutine ih
-
 
     subroutine matrizDij(part1, part2, Dij, n)
         ! Variables de entrada y salida
@@ -130,4 +118,145 @@ contains
             Dij = Dij + 3.0_dp*outerprod_d( temp, temp )/(16.0_dp*sqrddist)
         end if
     end subroutine matrizDij
+
+    subroutine cholesky_method(sigma,s,xr,r)
+        !  Variables de entrada
+        real(dp), intent(in) :: sigma(:,:),xr(:)
+        real(dp), intent(inout) :: r(:)
+        integer, intent(in) :: s
+
+        ! Variables locales
+        integer :: info
+        character(1) :: uplo
+        real(dp), allocatable :: temp(:,:)
+        allocate( temp(s,s) )
+
+        ! Descomposición de Cholesky
+        uplo = 'L'
+        call dpotrf( uplo,s,sigma,s,info )
+        if ( info .ne. 0 ) print*, "No se puede descomponer"
+        ! Copiar la descomposición a una matriz nueva
+        call dlacpy( uplo, s, s, sigma, s, temp, s )
+        ! call cholesky( sigma, mat_a )
+        ! Multiplicar L*Xr para obtener el vector de números aleatorios
+        ! R = matmul( mat_a, Xr )
+        call dgemv( 'n',s,s,1.0_dp,temp,s,Xr,1,0.0_dp,R,1 )
+
+        deallocate(temp)
+    end subroutine cholesky_method
+
+    subroutine krylov_method(sigma,s,xr,r)
+        !  Variables de entrada
+        real(dp), intent(in) :: sigma(:,:),xr(:)
+        real(dp), intent(inout) :: r(:)
+        integer, intent(in) :: s
+        ! Variables locales
+        real(dp), allocatable :: h(:,:),w(:),eid(:),v(:),old(:)
+        real(dp), allocatable :: temp(:,:),vm(:,:)
+        integer :: n, m, i, k
+        real(dp) :: ek ! Error entre iteraciones
+        real(dp) :: dnrm2,ddot ! Operaciones de BLAS
+        real(dp) :: znorm
+
+        ! Inicializar arreglos
+        n = size(xr, 1)
+        m = 15 ! Número de pasos de Lanczos
+        allocate( vm(n,m),h(m,m),w(n),eid(n) )
+        allocate( temp(m,m),v(n),old(s) )
+        vm = 0.0_dp
+        h = 0.0_dp
+        w = 0.0_dp
+        v = 0.0_dp
+        r = 0.0_dp
+        temp = 0.0_dp
+        ! eid es el primer vector de la matrix identidad
+        eid = 0.0_dp
+        eid(1) = 1.0_dp
+
+        ! Calcular el primer vector base
+        znorm = dnrm2( n,xr,1 )
+        vm(:,1) = xr / znorm
+        ! Comienzan las iteraciones de Lanczos
+        do i = 1,m
+            old(:) = r(:)
+            ! eid es el primer vector de la matrix identidad
+            eid = 0.0_dp
+            eid(1) = 1.0_dp
+
+            call dgemv( 'n',s,s,1.0_dp,sigma,s,vm(:,i),1,0.0_dp,w,1 )
+            if ( i > 1 ) then
+                w = w - ( h(i-1,i) * vm(:,i-1) )
+
+                ! Calcular el error relativo
+                ! ek = dnrm2( s,(r - old),1 )
+                ! ek = ek / dnrm2( s,old,1 )
+
+                ! if ( ek <= 0.01 ) then
+                !     print*, 'Suficiente precision'
+                ! else
+                !     print*, ek
+                ! end if
+            end if
+            k = size(w, 1)
+            h(i,i) = ddot( k,w,1,vm(:,i),1 )
+            if ( i < m ) then
+                w = w - ( h(i,i) * vm(:,i) )
+                k = size(w, 1)
+                h(i+1,i) = dnrm2( k,w,1 )
+                h(i,i+1) = h(i+1,i)
+                vm(:,i+1) = w / h(i+1,i)
+            end if
+        end do
+
+        ! Calcular el vector aproximado de desplazamientos estocásticos
+        call sqrt_matrix( h,temp )
+        call dgemv( 'N',m,m,1.0_dp,temp,n,eid,1,0.0_dp,v,1 )
+        call dgemv( 'N',n,m,1.0_dp,vm,n,v,1,0.0_dp,eid,1 )
+        r = znorm * eid
+        ! print*, r
+
+        ! Se libera la memoria
+        deallocate( v,vm,h,w,temp,eid,old )
+    end subroutine krylov_method
+
+    subroutine sqrt_matrix(a,b)
+        ! Variables de entrada
+        real(dp), intent(in) :: a(:,:)
+        real(dp), intent(out) :: b(:,:)
+        ! Variables locales
+        integer :: lda,n,i,nb,info,lwork
+        real(dp), allocatable :: w(:),work(:)
+        real(dp), allocatable :: diagw(:,:),temp(:,:)
+
+        lda = size(a, 1)
+        n = size(a, 2)
+        nb = 64
+        lwork = nb * n
+        allocate( w(lda),diagw(lda,n),work(lwork) )
+        allocate( temp(lda,n) )
+        diagw = 0.0_dp
+        b = 0.0_dp
+        w = 0.0_dp
+        work = 0.0_dp
+        
+        ! Copiar los datos de `a` en `b`
+        call dlacpy( 'All',lda,n,a,lda,b,lda )
+
+        ! Descomposición espectral de `b`
+        call dsyev( 'V','U',n,b,lda,w,work,lwork,info )
+        if (info .ne. 0) print*, 'No se pudo descomponer espectralmente'
+
+        ! Construir la matriz diagonal, habiendo calculado la raíz cuadrada
+        w = dsqrt(w)
+        forall ( i = 1:lda ) diagw(i,i) = w(i)
+
+        ! Reconstruir la matriz
+        ! Primero, Lambda * U**T
+        call dgemm( 'N','T',lda,n,n,1.0_dp,diagw,lda,b,lda,0.0_dp,temp,lda )
+        ! Luego, U * temp = U * (Lambda * U**T)
+        call dgemm ( 'N','N',lda,n,n,1.0_dp,b,lda,temp,lda,0.0_dp,b,lda )
+
+        ! Liberar la memoria
+        deallocate( w,diagw,work,temp )
+    end subroutine sqrt_matrix
 end module tensor
