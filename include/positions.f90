@@ -10,22 +10,17 @@ module positions
 
     contains
 
-    subroutine position_ih(x, y, z, fx, fy, fz, dij, Rz, pbc)
-        real(dp), intent(in) :: fx(:), fy(:), fz(:)
-        real(dp), intent(inout) :: x(:), y(:), z(:)
+    subroutine position_ih(rpos, f, dij, Rz, pbc)
+        real(dp), intent(in) :: f(:,:)
+        real(dp), intent(inout) :: rpos(:,:)
         real(dp), intent(in) :: dij(:,:)
         real(dp), intent(in) :: Rz(:)
         logical, intent(in):: pbc
         ! Local variables
         integer :: i, j, ij
         integer, parameter :: k = 3 ! Dimensión espacial del sistema
-        real(dp) :: fuerzas(k, np)
         real(dp) :: temp(np*k)
         real(dp) :: mulout(k)
-
-        fuerzas(1, :) = fx
-        fuerzas(2, :) = fy
-        fuerzas(3, :) = fz
 
         temp = 0.0_dp
 
@@ -33,7 +28,7 @@ module positions
             do j = 1, np-1
                 ij = (k*j) - k + 1
                 call dgemv( 'n',k,k,1.0_dp,dij(i:i+2,ij:ij+2),&
-                    k,fuerzas(:, j),1,0.0_dp,mulout,1 )
+                    k,f(:, j),1,0.0_dp,mulout,1 )
                 ! mulout = matmul( dij(i:i+2,ij:ij+2), fuerzas(:, j) )
                 temp(i:i+2) = temp(i:i+2) + mulout
             end do
@@ -41,32 +36,43 @@ module positions
 
         do i = 1, np
             ij = (k * i) - k + 1
-            x(i) = x(i) + temp(ij)*deltat + sqtwodt*Rz(ij)
-            y(i) = y(i) + temp(ij+1)*deltat + sqtwodt*Rz(ij+1)
-            z(i) = z(i) + temp(ij+2)*deltat + sqtwodt*Rz(ij+2)
+            rpos(1,i) = rpos(1,i) + temp(ij)*deltat + sqtwodt*Rz(ij)
+            rpos(2,i) = rpos(2,i) + temp(ij+1)*deltat + sqtwodt*Rz(ij+1)
+            rpos(3,i) = rpos(3,i) + temp(ij+2)*deltat + sqtwodt*Rz(ij+2)
             if (pbc) then
-                x(i) = x(i) - boxl*idnint(x(i)/boxl)
-                y(i) = y(i) - boxl*idnint(y(i)/boxl)
-                z(i) = z(i) - boxl*idnint(z(i)/boxl)
+                ! x(i) = x(i) - boxl*idnint(x(i)/boxl)
+                ! y(i) = y(i) - boxl*idnint(y(i)/boxl)
+                ! z(i) = z(i) - boxl*idnint(z(i)/boxl)
+                rpos(:,i) = rpos(:,i) - boxl*idnint(rpos(:,i)/boxl)
             end if
         end do
     end subroutine position_ih
 
-    subroutine position(x, y, z, fx, fy, fz, pbc)
-        real(dp), intent(in) :: fx(:), fy(:), fz(:)
-        real(dp), intent(inout) :: x(:), y(:), z(:)
+    subroutine position(r,f, pbc)
+        real(dp), intent(in) :: f(:,:)
+        real(dp), intent(inout) :: r(:,:)
         logical, intent(in):: pbc
         ! Local variables
-        integer :: i
+        integer :: i,j
+        integer, parameter :: n = 3 ! Dimensiones espaciales
+        real(dp) :: std_rand(n,np)
+
+        do i = 1,n
+            do j = 1,np
+                std_rand(i,j) = gasdev()
+            end do
+        end do
 
         do i = 1, np
-            x(i) = x(i) + (fx(i)*deltat) + (gasdev()*sqtwodt)
-            y(i) = y(i) + (fy(i)*deltat) + (gasdev()*sqtwodt)
-            z(i) = z(i) + (fz(i)*deltat) + (gasdev()*sqtwodt)
+            ! x(i) = x(i) + (fx(i)*deltat) + (gasdev()*sqtwodt)
+            ! y(i) = y(i) + (fy(i)*deltat) + (gasdev()*sqtwodt)
+            ! z(i) = z(i) + (fz(i)*deltat) + (gasdev()*sqtwodt)
+            r(:,i) = r(:,i) + (f(:,i)*deltat) + (std_rand(:,i)*sqtwodt)
             if (pbc) then
-                x(i) = x(i) - boxl*idnint(x(i)/boxl)
-                y(i) = y(i) - boxl*idnint(y(i)/boxl)
-                z(i) = z(i) - boxl*idnint(z(i)/boxl)
+                ! x(i) = x(i) - boxl*idnint(x(i)/boxl)
+                ! y(i) = y(i) - boxl*idnint(y(i)/boxl)
+                ! z(i) = z(i) - boxl*idnint(z(i)/boxl)
+                r(:,i) = r(:,i) - boxl*idnint(r(:,i)/boxl)
             end if
         end do
     end subroutine position

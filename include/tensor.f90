@@ -10,17 +10,17 @@ public ih
 
 contains
 
-    subroutine ih(x, y, z, k, mat_a, R)
+    subroutine ih(rpos, k, mat_a, R)
         ! Varibles de entrada y salida
         integer, intent(in) :: k   ! numero de submatrices (particulas)
-        real(dp), intent(in) :: x(:), y(:), z(:)
+        real(dp), intent(in) :: rpos(:,:)
         real(dp), intent(out) :: R(:)
         real(dp), intent(out) :: mat_a(:, :)
 
         ! Variables locales
         integer, parameter :: n = 3 !la dimension de la matriz (x,y,z)
         integer :: s
-        real(dp) :: datos(n, k)
+        ! real(dp) :: datos(n, k)
         real(dp) :: Dij(n, n)
         real(dp) :: part1(n)
         real(dp) :: part2(n)
@@ -30,9 +30,9 @@ contains
         real(dp), allocatable :: sigma(:,:)
 
         ! Concatenarlos para construir la matriz
-        datos(1, :) = x
-        datos(2, :) = y
-        datos(3, :) = z
+        ! datos(1, :) = x
+        ! datos(2, :) = y
+        ! datos(3, :) = z
 
         ! Tamaño total de elementos, partícula por cada dimensión espacial
         s = n*k
@@ -60,8 +60,8 @@ contains
             do ij = ix+1, k
                 pos = (ij*n) - n + 1
 
-                part1 = datos(:, ix)
-                part2 = datos(:, ij)
+                part1 = rpos(:, ix)
+                part2 = rpos(:, ij)
 
                 call matrizDij( part1,part2,Dij,n )
 
@@ -151,7 +151,7 @@ contains
         real(dp), intent(inout) :: r(:)
         integer, intent(in) :: s
         ! Variables locales
-        real(dp), allocatable :: h(:,:),w(:),eid(:),v(:),old(:)
+        real(dp), allocatable :: h(:,:),w(:),eid(:),v(:)
         real(dp), allocatable :: temp(:,:),vm(:,:)
         integer :: n, m, i, k
         real(dp) :: ek ! Error entre iteraciones
@@ -162,7 +162,7 @@ contains
         n = size(xr, 1)
         m = 15 ! Número de pasos de Lanczos
         allocate( vm(n,m),h(m,m),w(n),eid(n) )
-        allocate( temp(m,m),v(n),old(s) )
+        allocate( temp(m,m),v(n) )
         vm = 0.0_dp
         h = 0.0_dp
         w = 0.0_dp
@@ -178,11 +178,6 @@ contains
         vm(:,1) = xr / znorm
         ! Comienzan las iteraciones de Lanczos
         do i = 1,m
-            old(:) = r(:)
-            ! eid es el primer vector de la matrix identidad
-            eid = 0.0_dp
-            eid(1) = 1.0_dp
-
             call dgemv( 'n',s,s,1.0_dp,sigma,s,vm(:,i),1,0.0_dp,w,1 )
             if ( i > 1 ) then
                 w = w - ( h(i-1,i) * vm(:,i-1) )
@@ -216,7 +211,7 @@ contains
         ! print*, r
 
         ! Se libera la memoria
-        deallocate( v,vm,h,w,temp,eid,old )
+        deallocate( v,vm,h,w,temp,eid )
     end subroutine krylov_method
 
     subroutine sqrt_matrix(a,b)

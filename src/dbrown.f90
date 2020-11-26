@@ -10,8 +10,7 @@ use observables
 implicit none
 
 ! Variables locales
-real(dp), allocatable :: x(:), y(:), z(:), r(:), g(:), h(:)
-real(dp), allocatable :: fx(:), fy(:), fz(:)
+real(dp), allocatable :: rpos(:,:), f(:,:), r(:), g(:), h(:)
 real(dp), allocatable :: t(:), wt(:), ft(:)
 ! Deben ser `allocatable` dado que son arreglos grandes
 real(dp), allocatable :: cfx(:,:), cfy(:,:), cfz(:,:)
@@ -27,7 +26,7 @@ real(dp) :: ener, enerpot, epotn, dv, fnorm
 logical :: pbc = .true.
 integer :: u
 
-integer, parameter :: limT = 300000
+integer, parameter :: limT = 3000000
 
 ! Leer de un archivo de entrada los valores del usuario
 open(newunit=u, file = 'entrada.in', status = 'old')
@@ -52,27 +51,27 @@ else
 end if
 
 ! Inicializar la memoria de los arreglos
-allocate( x(np), y(np), z(np), fx(np), fy(np), fz(np) )
+allocate( rpos(k,np), f(k,np) )
 allocate( r(mr), g(mr), h(mr) )
 s = np*k
 allocate( dij(s, s), Rz(s) )
 
 ! Crear la configuración inicial de malla
-! call iniconfig(x, y, z, d)
+call iniconfig(rpos, d)
 
-open(newunit=u, file = 'finalconBD.dat', status = 'unknown')
-do i = 1,np
-    read(u,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
-end do
-close(u)
+! open(newunit=u, file = 'finalconBD.dat', status = 'unknown')
+! do i = 1,np
+!     read(u,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
+! end do
+! close(u)
 
 ! Cálculo inicial de interacciones hidrodinámicas, inicializar arreglos
 dij = 0.0_dp
 Rz = 0.0_dp
 
 ! Calcular la energía y fuerza iniciales
-call force( x, y, z, fx, fy, fz, ener )
-if (with_ih) call ih( x, y, z, np, dij, Rz )
+call force( rpos, f, ener )
+if (with_ih) call ih( rpos, np, dij, Rz )
 
 !Energy of the initial configuration
 print*, 'E/N = ', ener/np
@@ -81,8 +80,8 @@ print*, 'E/N = ', ener/np
 !Periodic boundary conditions; pbc > 0
 open(newunit=u, file = 'energy_BD.dat', status = 'unknown')
 do istep = 1, limT
-    call position( x, y, z, fx, fy, fz, pbc )
-    call force( x, y, z, fx, fy, fz, enerpot )
+    call position( rpos, f, pbc )
+    call force( rpos, f, enerpot )
     epotn = enerpot/real(np)
     if (mod(istep, 200000) == 0) then
         print*, istep, epotn, 'Thermal'
@@ -98,7 +97,7 @@ print*, 'The system has thermalized'
 ! Termina la termalización y se guarda la configuración final
 open(newunit=u, file = 'finalconBD.dat', status = 'unknown')
 do i = 1,np
-    write(u,'(3f16.8)') x(i), y(i), z(i)
+    write(u,'(3f16.8)') rpos(1,i), rpos(2,i), rpos(3,i)
 end do
 close(u)
 
@@ -123,18 +122,18 @@ wt = 0.0_dp
 ft = 0.0_dp
 
 ! Se inicializa el tensor de difusión y los números aleatorios
-if (with_ih) call ih( x, y, z, np, dij, Rz )
+if (with_ih) call ih( rpos, np, dij, Rz )
 
 ! Ciclos de promediación para observables
 do i = 1, ncp
     if (with_ih) then
-        call position_ih( x, y, z, fx, fy, fz, dij, Rz, pbc )
+        call position_ih( rpos, f, dij, Rz, pbc )
     else
-        call position( x, y, z, fx, fy, fz, pbc )
+        call position( rpos, f, pbc )
     end if
     ! Siempre se calcula la energía de la misma forma
-    call force( x, y, z, fx, fy, fz, enerpot )
-    if (with_ih) call ih( x, y, z, np, dij, Rz )
+    call force( rpos, f, enerpot )
+    if (with_ih) call ih( rpos, np, dij, Rz )
 
     if ( mod(i, 100000) == 0 ) then
         print*, i, enerpot/np, 'Average'
@@ -142,9 +141,9 @@ do i = 1, ncp
     if ( mod(i, ncep) == 0 ) then
         nprom = nprom + 1
         t(nprom) = deltat*ncep*(nprom-1)
-        cfx(nprom, :) = x
-        cfy(nprom, :) = y
-        cfz(nprom, :) = z
+        cfx(nprom, :) = rpos(1,:)
+        cfy(nprom, :) = rpos(2,:)
+        cfz(nprom, :) = rpos(3,:)
     end if
 end do
 
@@ -157,7 +156,7 @@ call save_timeseries( 'msd_data/msd_',cfx,cfy,cfz )
 print*, "Done!"
 
 ! Desalojar toda la memoria utilizada
-deallocate( cfx,cfy,cfz,x,y,z,r,g,h )
-deallocate( fx,fy,fz,dij,Rz )
+deallocate( cfx,cfy,cfz,rpos,r,g,h )
+deallocate( f,dij,Rz )
 
 end program principal

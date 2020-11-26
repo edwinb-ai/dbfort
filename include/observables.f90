@@ -5,8 +5,8 @@ module observables
     save
     public gr, normalize, difusion
 contains
-    subroutine gr(x,y,z,g,dr,pbc)
-        real(dp), intent(in) ::  x(:), y(:), z(:)
+    subroutine gr(r,g,dr,pbc)
+        real(dp), intent(in) :: r(:,:)
         real(dp), intent(inout) :: g(:)
         real(dp), intent(in) :: dr
         logical, intent(in) :: pbc
@@ -14,24 +14,26 @@ contains
         
         ! Local variables
         integer :: i, j, nbin
-        real(dp) :: xij, yij, zij, rij
+        real(dp) :: rposij(3), rij
 
         do i = 1,np-1
             do j = i+1,np
 
-                xij = x(i)-x(j)
-                yij = y(i)-y(j)
-                zij = z(i)-z(j)
+                ! xij = x(i)-x(j)
+                ! yij = y(i)-y(j)
+                ! zij = z(i)-z(j)
+                rposij = r(:,i) - r(:,j)
 
                 if (pbc) then
-                    xij = xij-boxl*idnint(xij/boxl)
-                    yij = yij-boxl*idnint(yij/boxl)
-                    zij = zij-boxl*idnint(zij/boxl)
+                    ! xij = xij-boxl*idnint(xij/boxl)
+                    ! yij = yij-boxl*idnint(yij/boxl)
+                    ! zij = zij-boxl*idnint(zij/boxl)
+                    rposij = rposij - boxl*idnint(rposij/boxl)
                 end if
 
                 ! rij = norm2( [xij,yij,zij] )
                 ! Mejor rendimiento con LAPACK
-                rij = dnrm2( 3,[xij, yij, zij],1 )
+                rij = dnrm2( 3,rposij,1 )
                 if (rij < rc) then
                     nbin = idnint(rij/dr) + 1
                     if (nbin <= mr) then

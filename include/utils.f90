@@ -8,28 +8,31 @@ module utils
 
 contains
 
-subroutine iniconfig(xc, yc, zc, d)
+subroutine iniconfig(r, d)
 ! defining three vector of mp dimension, it indicate that only are out variables
-    real(dp), intent(out) :: xc(:), yc(:), zc(:)
+    real(dp), intent(out) :: r(:,:)
     real(dp), intent(in) :: d
     ! Local variables
     integer :: i
 
-    xc(1) = -(boxl-d)/2.0_dp
-    yc(1) = -(boxl-d)/2.0_dp
-    zc(1) = -(boxl-d)/2.0_dp
+    ! xc(1) = -(boxl-d)/2.0_dp
+    ! yc(1) = -(boxl-d)/2.0_dp
+    ! zc(1) = -(boxl-d)/2.0_dp
+    r(:,1) = -(boxl-d)/2.0_dp
 
     do i = 2,np
-        xc(i) = xc(i-1) + d
-        yc(i) = yc(i-1)
-        zc(i) = zc(i-1)
-        if (xc(i) > rc) then
-            xc(i) = xc(1)
-            yc(i) = yc(i-1) + d
-            if (yc(i) > rc) then
-                xc(i) = xc(1)
-                yc(i) = yc(1)
-                zc(i) = zc(i-1) + d
+        r(1,i) = r(1,i-1) + d
+        r(2,i) = r(2,i-1)
+        r(3,i) = r(3,i-1)
+        ! yc(i) = yc(i-1)
+        ! zc(i) = zc(i-1)
+        if ( r(1,i) > rc ) then
+            r(1,i) = r(1,1)
+            r(2,i) = r(2,i-1) + d
+            if ( r(2,i) > rc ) then
+                r(1,i) = r(1,1)
+                r(2,i) = r(2,1)
+                r(3,i) = r(3,i-1) + d
             end if
         end if
     end do
