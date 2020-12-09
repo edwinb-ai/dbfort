@@ -29,7 +29,6 @@ contains
                 ij = (k*j) - k + 1
                 call dgemv('n', k, k, 1.0_dp, dij(i:i + 2, ij:ij + 2), &
                         k, f(:, j), 1, 0.0_dp, mulout, 1)
-                ! mulout = matmul( dij(i:i+2,ij:ij+2), fuerzas(:, j) )
                 temp(i:i + 2) = temp(i:i + 2) + mulout
             end do
         end do
@@ -40,9 +39,6 @@ contains
             rpos(2, i) = rpos(2, i) + temp(ij + 1)*deltat + sqtwodt*Rz(ij + 1)
             rpos(3, i) = rpos(3, i) + temp(ij + 2)*deltat + sqtwodt*Rz(ij + 2)
             if (pbc) then
-                ! x(i) = x(i) - boxl*idnint(x(i)/boxl)
-                ! y(i) = y(i) - boxl*idnint(y(i)/boxl)
-                ! z(i) = z(i) - boxl*idnint(z(i)/boxl)
                 rpos(:, i) = rpos(:, i) - boxl*dnint(rpos(:, i)/boxl)
             end if
         end do
@@ -57,17 +53,19 @@ contains
         integer, parameter :: n = 3 ! Dimensiones espaciales
         real(dp) :: std_rand(n, np)
 
+        ! Distribución normal con desviación estándar igual a sqrt(2*\Delta t)
         do i = 1, n
             do j = 1, np
-                std_rand(i, j) = gasdev()
+                std_rand(i, j) = gasdev() * sqtwodt
             end do
         end do
 
         do i = 1, np
-            r(:, i) = r(:, i) + (f(:, i)*deltat) + (std_rand(:, i)*sqtwodt)
+            r(:, i) = r(:, i) + ( f(:, i)*deltat ) + std_rand(:, i)
             if (pbc) then
                 r(:, i) = r(:, i) - boxl*dnint(r(:, i)/boxl)
             end if
         end do
+
     end subroutine position
 end module positions

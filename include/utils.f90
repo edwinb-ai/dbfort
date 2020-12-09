@@ -3,7 +3,7 @@ module utils
     use box_pot_parameters
     implicit none
     private
-    public unit_matrix, cholesky, check_nan, save_timeseries, &
+    public unit_matrix, check_nan, save_timeseries, &
             iniconfig, show_m, save_msd
 
 contains
@@ -14,14 +14,14 @@ subroutine iniconfig(r, d)
     real(dp), intent(in) :: d
     ! Variables locales
     integer :: i
-    r(:,1) = -(boxl-d)/2.0_dp
+
+    ! Se inicializan las posiciones
+    r(:,1) = (d / 2.0_dp) - rc
 
     do i = 2,np
         r(1,i) = r(1,i-1) + d
         r(2,i) = r(2,i-1)
         r(3,i) = r(3,i-1)
-        ! yc(i) = yc(i-1)
-        ! zc(i) = zc(i-1)
         if ( r(1,i) > rc ) then
             r(1,i) = r(1,1)
             r(2,i) = r(2,i-1) + d
@@ -35,7 +35,7 @@ subroutine iniconfig(r, d)
     end do
 end subroutine iniconfig
 
-subroutine unit_matrix(mat) ! matrix dimension
+subroutine unit_matrix(mat)
     real(dp), intent(inout) :: mat(:, :)
     ! Variables locales
     integer :: i, n
@@ -47,34 +47,6 @@ subroutine unit_matrix(mat) ! matrix dimension
     forall ( i = 1:n ) mat(i, i) = 1.0_dp
 
 end subroutine unit_matrix
-
-subroutine cholesky(mat_a, sigma)
-    real(dp), intent(in) :: mat_a(:,:)
-    real(dp), intent(out):: sigma(:,:)
-
-    ! Variables locales
-    real(dp) :: ddot
-    integer :: i, j, m, n
-
-    m = size(mat_a, 1)
-
-    sigma = 0.0_dp
-
-    do j = 1, m
-        n = size(sigma(j,1:j-1), 1)
-        sigma(j, j) = dsqrt( mat_a(j, j) - ddot( n,sigma(j,1:j-1),1,sigma(j,1:j-1),1 ) )
-        if ( sigma(j, j) <= 0.000001_dp ) then
-            print*, 'Numerical instability'
-            print*, sigma(j, j)
-            stop
-        end if
-        do i = j+1, m
-            n = size(sigma(j,1:j-1), 1)
-            sigma(i, j) = mat_a(i,j)-ddot( n,sigma(i,1:j-1),1,sigma(j,1:j-1),1 )
-            sigma(i,j) = sigma(i,j) / sigma(j,j)
-        end do
-    end do
-end subroutine cholesky
 
 subroutine show_m(A)
     real(dp), intent(in) :: A(:,:)

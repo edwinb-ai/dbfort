@@ -10,7 +10,7 @@ contains
         real(dp), intent(inout) :: g(:)
         real(dp), intent(in) :: dr
         logical, intent(in) :: pbc
-        real(dp) :: dnrm2
+        real(dp), external :: dnrm2
         
         ! Local variables
         integer :: i, j, nbin
@@ -18,21 +18,10 @@ contains
 
         do i = 1,np-1
             do j = i+1,np
-
-                ! xij = x(i)-x(j)
-                ! yij = y(i)-y(j)
-                ! zij = z(i)-z(j)
                 rposij = r(:,i) - r(:,j)
-
                 if (pbc) then
-                    ! xij = xij-boxl*dnint(xij/boxl)
-                    ! yij = yij-boxl*dnint(yij/boxl)
-                    ! zij = zij-boxl*dnint(zij/boxl)
                     rposij = rposij - boxl*dnint(rposij/boxl)
                 end if
-
-                ! rij = norm2( [xij,yij,zij] )
-                ! Mejor rendimiento con LAPACK
                 rij = dnrm2( 3,rposij,1 )
                 if (rij < rc) then
                     nbin = idnint(rij/dr) + 1

@@ -1,7 +1,7 @@
 module tensor
 use types
 use outerprod
-use utils, only: unit_matrix, cholesky
+use utils, only: unit_matrix
 use randomm, only: gasdev
 use ieee_arithmetic, only: ieee_is_nan
 
@@ -65,7 +65,10 @@ contains
             end do
         end do
 
+        ! Se añade un pequeño valor para hacer a la matriz
+        ! estable numéricamente
         sigma = mat_a + 0.00001_dp
+        !! # Se escoge cualquiera de los dos
         ! call cholesky_method( sigma,s,Xr,R )
         call krylov_method( sigma,s,Xr,R )
 
@@ -84,7 +87,7 @@ contains
         real(dp) :: rij,sqrddist,xij,yij,zij
         real(dp) :: ident(n, n), prodout(n, n)
         real(dp) :: temp(n)
-        real(dp) :: dnrm2 ! Norma euclidiana de BLAS
+        real(dp), external :: dnrm2 ! Norma euclidiana de BLAS
 
         ! Calcular las distancias
         xij = part1(1) - part2(1)
@@ -132,9 +135,7 @@ contains
         if ( info .ne. 0 ) print*, "No se puede descomponer"
         ! Copiar la descomposición a una matriz nueva
         call dlacpy( uplo, s, s, sigma, s, temp, s )
-        ! call cholesky( sigma, mat_a )
         ! Multiplicar L*Xr para obtener el vector de números aleatorios
-        ! R = matmul( mat_a, Xr )
         call dgemv( 'n',s,s,1.0_dp,temp,s,Xr,1,0.0_dp,R,1 )
 
         deallocate(temp)
@@ -146,10 +147,9 @@ contains
         real(dp), intent(inout) :: r(:)
         integer, intent(in) :: s
         ! Variables locales
-        real(dp), allocatable :: w(:),eid(:),v(:),res(:),old(:)
+        real(dp), allocatable :: w(:),eid(:),v(:),res(:)
         real(dp), allocatable :: temp(:,:),vm(:,:),h(:,:)
         integer :: n, m, i, k
-        real(dp) :: ek, epserr ! Error entre iteraciones
         real(dp), external :: dnrm2,ddot ! Operaciones de BLAS
         real(dp) :: znorm, dump
 
@@ -157,7 +157,7 @@ contains
 
         ! Inicializar arreglos
         m = 50 ! Número de pasos de Lanczos
-        allocate( vm(s,m),h(m,m),w(s),eid(m),old(s) )
+        allocate( vm(s,m),h(m,m),w(s),eid(m) )
         allocate( temp(m,m),v(m),res(s) )
         vm(:,:) = 0.0_dp
         h(:,:) = 0.0_dp
@@ -165,22 +165,15 @@ contains
         v(:) = 0.0_dp
         r(:) = 0.0_dp
         res(:) = 0.0_dp
-        old = 0.0_dp
         temp(:,:) = 0.0_dp
         ! eid es el primer vector de la matrix identidad
         eid(:) = 0.0_dp
         eid(1) = 1.0_dp
-        ! Inicializar el error entre iteraciones
-        ek = 1.0_dp
-        epserr = 0.01_dp ! Error máximo tolerado
-        ! Inicializar el contador
-        i = 1
 
         ! Calcular el primer vector base
         znorm = dnrm2( s,xr,1 )
         vm(:,1) = xr / znorm
         ! Comienzan las iteraciones de Lanczos
-        ! do while ( (ek > epserr ) .or. ( i < m ) )
         do i = 1,m
             call dgemv( 'n',s,s,1.0_dp,sigma,s,vm(:,i),1,0.0_dp,w,1 )
             if ( i > 1 ) then
@@ -195,36 +188,14 @@ contains
                 h(i,i+1) = h(i+1,i)
                 vm(:,i+1) = w / h(i+1,i)
             end if
-
-            ! call sqrt_matrix( h,temp )
-            ! call dgemv( 'N',i,i,1.0_dp,temp,i,eid,1,0.0_dp,v,1 )
-            ! call dgemv( 'N',s,i,1.0_dp,vm,s,v,1,0.0_dp,res,1 )
-            ! r = znorm * res
-
-            ! if ( i > 2 ) then
-            !     ! Calcular el error relativo
-            !     ek = dnrm2( s,(r - old),1 )
-            !     dump = dnrm2( s,old,1 )
-            !     if ( dump == 0.0_dp ) stop 'dividing by zero'
-            !     if ( ieee_is_nan(dump) ) stop 'NaN encountered'
-            !     ek = ek / dnrm2( s,old,1 )
-            !     print*, ek
-            ! end if
-        
-            ! ! Aumentar el contador
-            ! i = i + 1
-            ! ! Copiar el resultado anterior
-            ! old = r
         end do
         call sqrt_matrix( h,temp )
         call dgemv( 'N',m,m,1.0_dp,temp,m,eid,1,0.0_dp,v,1 )
         call dgemv( 'N',s,m,1.0_dp,vm,s,v,1,0.0_dp,res,1 )
         r = znorm * res
-        ! Mostrar los resultados obtenidos
-        ! print*, 'Suficiente precision', ek
 
         ! Se libera la memoria
-        deallocate( v,vm,h,w,temp,eid,res,old )
+        deallocate( v,vm,h,w,temp,eid,res )
     end subroutine krylov_method
 
     subroutine sqrt_matrix(a,b)
