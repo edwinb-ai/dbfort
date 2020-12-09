@@ -25,10 +25,10 @@ contains
                 rposij = r(:,i) - r(:,j)
 
                 if (pbc) then
-                    ! xij = xij-boxl*idnint(xij/boxl)
-                    ! yij = yij-boxl*idnint(yij/boxl)
-                    ! zij = zij-boxl*idnint(zij/boxl)
-                    rposij = rposij - boxl*idnint(rposij/boxl)
+                    ! xij = xij-boxl*dnint(xij/boxl)
+                    ! yij = yij-boxl*dnint(yij/boxl)
+                    ! zij = zij-boxl*dnint(zij/boxl)
+                    rposij = rposij - boxl*dnint(rposij/boxl)
                 end if
 
                 ! rij = norm2( [xij,yij,zij] )
@@ -55,7 +55,7 @@ contains
         integer :: u, i
         real(dp) :: dv, fnorm, graux, hraux
 
-        open(newunit=u, file='gr_BD.dat', status='unknown')
+        open(newunit=u, file=filename, status='unknown')
         write(u,'(3f16.8)') r(1), g(1)
 
         do i=2,mr

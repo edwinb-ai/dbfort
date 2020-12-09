@@ -3,6 +3,7 @@ use types
 use outerprod
 use utils, only: unit_matrix, cholesky
 use randomm, only: gasdev
+use ieee_arithmetic, only: ieee_is_nan
 
 implicit none
 private
@@ -20,7 +21,6 @@ contains
         ! Variables locales
         integer, parameter :: n = 3 !la dimension de la matriz (x,y,z)
         integer :: s
-        ! real(dp) :: datos(n, k)
         real(dp) :: Dij(n, n)
         real(dp) :: part1(n)
         real(dp) :: part2(n)
@@ -28,11 +28,6 @@ contains
         real(dp), allocatable :: Xr(:)
         integer :: ix, ij, pos, il   ! indices
         real(dp), allocatable :: sigma(:,:)
-
-        ! Concatenarlos para construir la matriz
-        ! datos(1, :) = x
-        ! datos(2, :) = y
-        ! datos(3, :) = z
 
         ! Tamaño total de elementos, partícula por cada dimensión espacial
         s = n*k
@@ -151,46 +146,45 @@ contains
         real(dp), intent(inout) :: r(:)
         integer, intent(in) :: s
         ! Variables locales
-        real(dp), allocatable :: h(:,:),w(:),eid(:),v(:)
-        real(dp), allocatable :: temp(:,:),vm(:,:)
+        real(dp), allocatable :: w(:),eid(:),v(:),res(:),old(:)
+        real(dp), allocatable :: temp(:,:),vm(:,:),h(:,:)
         integer :: n, m, i, k
-        real(dp) :: ek ! Error entre iteraciones
-        real(dp) :: dnrm2,ddot ! Operaciones de BLAS
-        real(dp) :: znorm
+        real(dp) :: ek, epserr ! Error entre iteraciones
+        real(dp), external :: dnrm2,ddot ! Operaciones de BLAS
+        real(dp) :: znorm, dump
+
+        if ( (size(r) .ne. s) .or. (size(Xr) .ne. s) ) stop 'Tamaños incorrectos'
 
         ! Inicializar arreglos
-        n = size(xr, 1)
-        m = 15 ! Número de pasos de Lanczos
-        allocate( vm(n,m),h(m,m),w(n),eid(n) )
-        allocate( temp(m,m),v(n) )
-        vm = 0.0_dp
-        h = 0.0_dp
-        w = 0.0_dp
-        v = 0.0_dp
-        r = 0.0_dp
-        temp = 0.0_dp
+        m = 50 ! Número de pasos de Lanczos
+        allocate( vm(s,m),h(m,m),w(s),eid(m),old(s) )
+        allocate( temp(m,m),v(m),res(s) )
+        vm(:,:) = 0.0_dp
+        h(:,:) = 0.0_dp
+        w(:) = 0.0_dp
+        v(:) = 0.0_dp
+        r(:) = 0.0_dp
+        res(:) = 0.0_dp
+        old = 0.0_dp
+        temp(:,:) = 0.0_dp
         ! eid es el primer vector de la matrix identidad
-        eid = 0.0_dp
+        eid(:) = 0.0_dp
         eid(1) = 1.0_dp
+        ! Inicializar el error entre iteraciones
+        ek = 1.0_dp
+        epserr = 0.01_dp ! Error máximo tolerado
+        ! Inicializar el contador
+        i = 1
 
         ! Calcular el primer vector base
-        znorm = dnrm2( n,xr,1 )
+        znorm = dnrm2( s,xr,1 )
         vm(:,1) = xr / znorm
         ! Comienzan las iteraciones de Lanczos
+        ! do while ( (ek > epserr ) .or. ( i < m ) )
         do i = 1,m
             call dgemv( 'n',s,s,1.0_dp,sigma,s,vm(:,i),1,0.0_dp,w,1 )
             if ( i > 1 ) then
                 w = w - ( h(i-1,i) * vm(:,i-1) )
-
-                ! Calcular el error relativo
-                ! ek = dnrm2( s,(r - old),1 )
-                ! ek = ek / dnrm2( s,old,1 )
-
-                ! if ( ek <= 0.01 ) then
-                !     print*, 'Suficiente precision'
-                ! else
-                !     print*, ek
-                ! end if
             end if
             k = size(w, 1)
             h(i,i) = ddot( k,w,1,vm(:,i),1 )
@@ -201,17 +195,36 @@ contains
                 h(i,i+1) = h(i+1,i)
                 vm(:,i+1) = w / h(i+1,i)
             end if
-        end do
 
-        ! Calcular el vector aproximado de desplazamientos estocásticos
+            ! call sqrt_matrix( h,temp )
+            ! call dgemv( 'N',i,i,1.0_dp,temp,i,eid,1,0.0_dp,v,1 )
+            ! call dgemv( 'N',s,i,1.0_dp,vm,s,v,1,0.0_dp,res,1 )
+            ! r = znorm * res
+
+            ! if ( i > 2 ) then
+            !     ! Calcular el error relativo
+            !     ek = dnrm2( s,(r - old),1 )
+            !     dump = dnrm2( s,old,1 )
+            !     if ( dump == 0.0_dp ) stop 'dividing by zero'
+            !     if ( ieee_is_nan(dump) ) stop 'NaN encountered'
+            !     ek = ek / dnrm2( s,old,1 )
+            !     print*, ek
+            ! end if
+        
+            ! ! Aumentar el contador
+            ! i = i + 1
+            ! ! Copiar el resultado anterior
+            ! old = r
+        end do
         call sqrt_matrix( h,temp )
-        call dgemv( 'N',m,m,1.0_dp,temp,n,eid,1,0.0_dp,v,1 )
-        call dgemv( 'N',n,m,1.0_dp,vm,n,v,1,0.0_dp,eid,1 )
-        r = znorm * eid
-        ! print*, r
+        call dgemv( 'N',m,m,1.0_dp,temp,m,eid,1,0.0_dp,v,1 )
+        call dgemv( 'N',s,m,1.0_dp,vm,s,v,1,0.0_dp,res,1 )
+        r = znorm * res
+        ! Mostrar los resultados obtenidos
+        ! print*, 'Suficiente precision', ek
 
         ! Se libera la memoria
-        deallocate( v,vm,h,w,temp,eid )
+        deallocate( v,vm,h,w,temp,eid,res,old )
     end subroutine krylov_method
 
     subroutine sqrt_matrix(a,b)
@@ -239,7 +252,7 @@ contains
 
         ! Descomposición espectral de `b`
         call dsyev( 'V','U',n,b,lda,w,work,lwork,info )
-        if (info .ne. 0) print*, 'No se pudo descomponer espectralmente'
+        if (info .ne. 0) stop 'No se pudo descomponer espectralmente'
 
         ! Construir la matriz diagonal, habiendo calculado la raíz cuadrada
         w = dsqrt(w)

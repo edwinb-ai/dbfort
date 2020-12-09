@@ -4,7 +4,6 @@ program principal
     use tensor, only: ih
     use utils, only: save_timeseries, save_msd, iniconfig, show_m
     use positions, only: position, position_ih
-    use link_list_module, only: initialize_list, finalize_list
     use energies
     use observables
 
@@ -25,7 +24,7 @@ program principal
     integer :: i, istep, nprom, ncep, ncp, s
     real(dp) :: enerpot, epotn
     logical :: pbc = .true.
-    integer :: u
+    integer :: u,reps
 
     integer, parameter :: limT = 3000000
 
@@ -36,8 +35,8 @@ program principal
 ! Actualizar los parámetros de simulación
     rho = 6.0_dp*real(phi)/pi
     boxl = (np/rho)**(1._dp/3._dp)
-    ! rc = boxl/2.0_dp
-    rc = 2.0_dp
+    rc = boxl/2.0_dp
+    ! rc = bpot * 1.10_dp
     d = (1.0_dp/rho)**(1._dp/3._dp)
     dr = rc/mr
     dq = pi/rc
@@ -58,39 +57,26 @@ program principal
     s = np*k
     allocate (dij(s, s), Rz(s))
 
-! Crear la configuración inicial de malla
+    ! Crear la configuración inicial de malla
     call iniconfig(rpos, d)
-    call initialize_list(np, rc/boxl)
-
-! open(newunit=u, file = 'finalconBD.dat', status = 'unknown')
-! do i = 1,np
-!     read(u,'(3f16.8)') x(i), y(i), z(i) !guardo mi foto final
-! end do
-! close(u)
-
-! Cálculo inicial de interacciones hidrodinámicas, inicializar arreglos
+    ! Cálculo inicial de interacciones hidrodinámicas, inicializar arreglos
     dij = 0.0_dp
     Rz = 0.0_dp
 
 ! Calcular la energía y fuerza iniciales
-    ! call force(rpos, f, enerpot)
-    call force_ll(rpos, f, enerpot)
+    call force(rpos, f, enerpot)
     if (with_ih) call ih(rpos, np, dij, Rz)
 
 !Energy of the initial configuration
-    print *, 'E/N = ', enerpot/np
+    epotn = enerpot/real(np)
+    print *, 'E/N = ', epotn
 
 ! Comienza la termalización
 !Periodic boundary conditions; pbc > 0
     open (newunit=u, file='energy_BD.dat', status='unknown')
     do istep = 1, limT
         call position(rpos, f, pbc)
-        ! call force(rpos, f, enerpot)
-        call force_ll(rpos, f, enerpot)
-        epotn = enerpot/real(np)
-        ! print *, epotn
-        ! ! print *, f
-        ! print *, ' '
+        call force(rpos, f, enerpot)
         if (mod(istep, 200000) == 0) then
             print *, istep, epotn, 'Thermal'
         end if
@@ -105,13 +91,12 @@ program principal
 ! Termina la termalización y se guarda la configuración final
     open (newunit=u, file='finalconBD.dat', status='unknown')
     do i = 1, np
-        write (u, '(3f16.8)') rpos(1, i), rpos(2, i), rpos(3, i)
+        write (unit=u, fmt='(3f16.8)') rpos(:, i)
     end do
     close (u)
 
-    stop
-
 ! Aquí se inicializan los arreglos para el cálculo de las observables
+    r = 0.0_dp
     g = 0.0_dp
     h = 0.0_dp
 
@@ -120,6 +105,7 @@ program principal
     mt = ncp/ncep
     nprom = 0
     pbc = .false.
+    reps = 1 ! Cada cuántos pasos se actualiza el tensor de RPY
 
     allocate (cfx(mt, np), cfy(mt, np), cfz(mt, np))
     allocate (t(mt), wt(mt), ft(mt))
@@ -136,15 +122,14 @@ program principal
 
 ! Ciclos de promediación para observables
     do i = 1, ncp
-        if (with_ih) then
+        if ( with_ih ) then
             call position_ih(rpos, f, dij, Rz, pbc)
         else
             call position(rpos, f, pbc)
         end if
         ! Siempre se calcula la energía de la misma forma
-        ! call force(rpos, f, enerpot)
-        call force_ll(rpos, f, enerpot)
-        if (with_ih) call ih(rpos, np, dij, Rz)
+        call force(rpos, f, enerpot)
+        if ( (with_ih) .and. (mod(i,reps) == 0) ) call ih(rpos, np, dij, Rz)
 
         if (mod(i, 100000) == 0) then
             print *, i, enerpot/np, 'Average'
@@ -155,19 +140,20 @@ program principal
             cfx(nprom, :) = rpos(1, :)
             cfy(nprom, :) = rpos(2, :)
             cfz(nprom, :) = rpos(3, :)
+            call gr(rpos,g,dr,.true.)
         end if
     end do
 
     call difusion(nprom, cfx, cfy, cfz, wt, ft)
 
     call save_msd(t, wt, ft, nprom, 'wt_fself.dat')
+    call normalize(g,h,r,dr,nprom,'gr_ih.dat')
 
-    print *, "Saving MSD to files..."
-    call save_timeseries('msd_data/msd_', cfx, cfy, cfz)
-    print *, "Done!"
+    ! print *, "Saving MSD to files..."
+    ! call save_timeseries('msd_data/msd_', cfx, cfy, cfz)
+    ! print *, "Done!"
 
 ! Desalojar toda la memoria utilizada
-    call finalize_list
     deallocate (cfx, cfy, cfz, rpos, r, g, h)
     deallocate (f, dij, Rz)
 

@@ -9,15 +9,11 @@ module utils
 contains
 
 subroutine iniconfig(r, d)
-! defining three vector of mp dimension, it indicate that only are out variables
+    ! Variables de entrada
     real(dp), intent(out) :: r(:,:)
     real(dp), intent(in) :: d
-    ! Local variables
+    ! Variables locales
     integer :: i
-
-    ! xc(1) = -(boxl-d)/2.0_dp
-    ! yc(1) = -(boxl-d)/2.0_dp
-    ! zc(1) = -(boxl-d)/2.0_dp
     r(:,1) = -(boxl-d)/2.0_dp
 
     do i = 2,np
@@ -35,12 +31,13 @@ subroutine iniconfig(r, d)
                 r(3,i) = r(3,i-1) + d
             end if
         end if
+        
     end do
 end subroutine iniconfig
 
 subroutine unit_matrix(mat) ! matrix dimension
     real(dp), intent(inout) :: mat(:, :)
-    ! Local:
+    ! Variables locales
     integer :: i, n
 
     n = min(size(mat, 1), size(mat, 2))

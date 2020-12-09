@@ -28,7 +28,7 @@ contains
             do j = 1, np - 1
                 ij = (k*j) - k + 1
                 call dgemv('n', k, k, 1.0_dp, dij(i:i + 2, ij:ij + 2), &
-                           k, f(:, j), 1, 0.0_dp, mulout, 1)
+                        k, f(:, j), 1, 0.0_dp, mulout, 1)
                 ! mulout = matmul( dij(i:i+2,ij:ij+2), fuerzas(:, j) )
                 temp(i:i + 2) = temp(i:i + 2) + mulout
             end do
@@ -43,7 +43,7 @@ contains
                 ! x(i) = x(i) - boxl*idnint(x(i)/boxl)
                 ! y(i) = y(i) - boxl*idnint(y(i)/boxl)
                 ! z(i) = z(i) - boxl*idnint(z(i)/boxl)
-                rpos(:, i) = rpos(:, i) - boxl*idnint(rpos(:, i)/boxl)
+                rpos(:, i) = rpos(:, i) - boxl*dnint(rpos(:, i)/boxl)
             end if
         end do
     end subroutine position_ih
@@ -64,14 +64,8 @@ contains
         end do
 
         do i = 1, np
-            ! x(i) = x(i) + (fx(i)*deltat) + (gasdev()*sqtwodt)
-            ! y(i) = y(i) + (fy(i)*deltat) + (gasdev()*sqtwodt)
-            ! z(i) = z(i) + (fz(i)*deltat) + (gasdev()*sqtwodt)
             r(:, i) = r(:, i) + (f(:, i)*deltat) + (std_rand(:, i)*sqtwodt)
             if (pbc) then
-                ! x(i) = x(i) - boxl*idnint(x(i)/boxl)
-                ! y(i) = y(i) - boxl*idnint(y(i)/boxl)
-                ! z(i) = z(i) - boxl*idnint(z(i)/boxl)
                 r(:, i) = r(:, i) - boxl*dnint(r(:, i)/boxl)
             end if
         end do
