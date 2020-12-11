@@ -77,6 +77,7 @@ program principal
     do istep = 1, limT
         call position(rpos, f, pbc)
         call force(rpos, f, enerpot)
+        epotn = enerpot/real(np)
         if (mod(istep, 200000) == 0) then
             print *, istep, epotn, 'Thermal'
         end if
@@ -129,10 +130,11 @@ program principal
         end if
         ! Siempre se calcula la energía de la misma forma
         call force(rpos, f, enerpot)
+        epotn = enerpot/real(np)
         if ( (with_ih) .and. (mod(i,reps) == 0) ) call ih(rpos, np, dij, Rz)
 
         if (mod(i, 100000) == 0) then
-            print *, i, enerpot/np, 'Average'
+            print *, i, epotn, 'Average'
         end if
         if (mod(i, ncep) == 0) then
             nprom = nprom + 1
