@@ -4,8 +4,20 @@ Este es un código modular para realizar dinámica browniana con interacciones h
 usando el clásico algoritmo de Ermak y McCammon.
 
 Esta versión también incluye interacciones hidrodinámicas empleando el tensor de
-Rotne-Prager-Yamakawa (RPY). El tensor se descompone mediante el algoritmo de Cholesky
-para obtener los desplazamientos estocásticos.
+Rotne-Prager-Yamakawa (RPY). 
+
+El tensor se puede descomponer mediante los siguientes algoritmos:
+
+- Cholesky, con orden O(n^3),
+- el proceso de Lanczos, con orden O(n^2),
+
+donde `n` representa el número de partículas a simular en el sistema.
+
+La diferencia entre cada uno de ellos es que el método de Cholesky da el resultado exacto
+de la descomposición, pero es muy lento.
+Por otro lado, el proceso de Lanczos es un método de subespacios de Krylov, lo cual
+es más rápido pero solamente es un resultado aproximado.
+En general, se debe preferir el proceso de Lanczos.
 
 # Uso general
 
